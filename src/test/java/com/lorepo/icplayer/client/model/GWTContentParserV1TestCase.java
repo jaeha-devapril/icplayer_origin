@@ -13,7 +13,7 @@ import com.googlecode.gwt.test.GwtModule;
 import com.googlecode.gwt.test.GwtTest;
 import com.lorepo.icf.screen.DeviceOrientation;
 import com.lorepo.icplayer.client.model.layout.PageLayout;
-import com.lorepo.icplayer.client.model.utils.ContentFactoryMockup;
+import com.lorepo.icplayer.client.model.utils.ContentFactoryQNoteMockup;
 
 @GwtModule("com.lorepo.icplayer.Icplayer")
 public class GWTContentParserV1TestCase extends GwtTest {
@@ -102,7 +102,7 @@ public class GWTContentParserV1TestCase extends GwtTest {
 
 	@Test
 	public void syncingExistingV1HaveToCreateOneToOneRelationOfLayoutAndCssStyle() throws SAXException, IOException {
-		ContentFactoryMockup cf =  ContentFactoryMockup.getInstanceWithAllPages();
+		ContentFactoryQNoteMockup cf =  ContentFactoryQNoteMockup.getInstanceWithAllPages();
 		Content content = cf.loadFromFile("testdata/contentV1Parser.xml");
 		
 		
@@ -115,7 +115,7 @@ public class GWTContentParserV1TestCase extends GwtTest {
 	
 	@Test
 	public void syncingLayoutsWhoUseTheSameCssStyleHaveToCreateSeparateCopiesForThemAndRemoveAdditional() throws SAXException, IOException {
-		ContentFactoryMockup cf =  ContentFactoryMockup.getInstanceWithAllPages();
+		ContentFactoryQNoteMockup cf =  ContentFactoryQNoteMockup.getInstanceWithAllPages();
 		Content content = cf.loadFromFile("testdata/contentV1Parser_c1.xml");
 		
 		

@@ -3,8 +3,11 @@ package com.lorepo.icplayer.client.module.text;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import com.lorepo.icplayer.client.utils.Utils;
 
 import com.lorepo.icf.utils.StringUtils;
+import com.lorepo.icplayer.client.module.api.player.IPlayerServices;
+import com.lorepo.icplayer.client.module.api.player.IScoreService;
 import com.lorepo.icplayer.client.model.alternativeText.AlternativeTextService;
 
 public class GapInfo implements IGapCommonUtilsProvider {
@@ -56,6 +59,8 @@ public class GapInfo implements IGapCommonUtilsProvider {
 
         return inRange(character, 65, 90) || inRange(character, 97, 122) || inRange(character, 192, 687) || inRange(character, 900, 1159) || // latin letters
 		       inRange(character, 1162, 1315) || inRange(character, 1329, 1366) || inRange(character, 1377, 1415) || // cyrillic letters
+			   inRange(character, 1425, 1536) || inRange(character, 1569, 1610) || // arabic letters
+		       inRange(character, 0xAC00, 0xD7AF) || // korean letters
 		       inRange(character, 1425, 1536) || inRange(character, 1569, 1610) || // arabic letters
 		       inRange(character, 0x3400, 0x9FFF) || inRange(character, 0x0620, 0x063F) || inRange(character, 0x0641, 0x064A); //chinese and japanese letters
     }
@@ -74,8 +79,33 @@ public class GapInfo implements IGapCommonUtilsProvider {
         return (value <= max) & (value >= min);
     }
 	
-	private static String removePunctuation(String text) {
-		String alfaNumericText = "";
+	
+    public String removePunctuation(String text) {
+    	String reg = "[!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~]";
+    	String clean = text.replaceAll(reg, "");
+    	
+//        Utils.consoleLog("removePunctuation text : " + clean);
+        return clean;
+    }
+    
+//	private static String removePunctuation(String text) {
+		//		String alfaNumericText = "";
+//		StringBuilder sb = new StringBuilder();
+//
+//		for (int i = 0; i < text.length(); i++) {
+//			char c = text.charAt(i);
+//			if (GapInfo.isLetter(c) || GapInfo.isDigit(c)) {
+//				sb.append(c);
+//			}
+//		}
+//		
+//		alfaNumericText = sb.toString();
+//
+//		return alfaNumericText;
+//	}
+	
+	private static String removeSpace(String text) {
+		String retText = "";
 		StringBuilder sb = new StringBuilder();
 
 		for (int i = 0; i < text.length(); i++) {
@@ -84,19 +114,50 @@ public class GapInfo implements IGapCommonUtilsProvider {
 				sb.append(c);
 			}
 		}
-		
-		alfaNumericText = sb.toString();
 
-		return alfaNumericText;
+		retText = sb.toString();
+
+		return retText;
 	}
 
-	public boolean isCorrect(String text) {
+	public boolean isCorrect(String text, String moduleID, IPlayerServices playerService) {
+
 		boolean correct = false;
-		text = getCleanedText(text);
-		for (String answer : checkAnswers) {
-			String parsedAnswer = AlternativeTextService.getVisibleText(answer);
-			if (parsedAnswer.compareTo(text) == 0) {
+		if(!isCaseSensitive){
+			text = text.toLowerCase();
+		}
+		if(isIgnorePunctuation){
+			text = removePunctuation(text);
+		}
+		
+//		if(isIgnoreSpace) {
+//			text = removeSpace(text);
+//		}
+		
+		Utils.consoleLog("isCorrect text : " + text);
+		for(String answer : checkAnswers){
+					
+//			if(isIgnoreSpace) {
+//				answer = removeSpace(answer);
+//			}
+			
+			Utils.consoleLog("isCorrect answer : " + answer);
+			Utils.consoleLog("isCorrect text answer : " + answer.compareTo(text));
+			Utils.consoleLog("isCorrect playerService : " + playerService);
+			if(answer.compareTo(text) == 0){
 				correct = true;
+
+				try {
+					Utils.consoleLog("isCorrect moduleID : " + moduleID  + ", scoreService : " + playerService.getScoreService());
+					if( moduleID != null && playerService != null  && playerService.getScoreService() != null 
+							&& Utils.checkSameAnswerInGroup(playerService, moduleID, text ) ) {
+						correct = false;	
+					}
+				}catch(Exception e) {
+					Utils.consoleLog("isCorrect e : " + e);
+				}
+				
+				Utils.consoleLog("isCorrect correct : " + correct);
 				break;
 			}
 		}

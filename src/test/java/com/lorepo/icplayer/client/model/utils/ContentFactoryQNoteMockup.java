@@ -13,20 +13,20 @@ import com.google.gwt.xml.client.Element;
 import com.lorepo.icf.utils.XMLUtils;
 import com.lorepo.icplayer.client.mockup.xml.XMLParserMockup;
 import com.lorepo.icplayer.client.model.Content;
-import com.lorepo.icplayer.client.xml.content.ContentFactory;
+import com.lorepo.icplayer.client.xml.content.ContentFactoryQNote;
 
-public class ContentFactoryMockup extends ContentFactory {
+public class ContentFactoryQNoteMockup extends ContentFactoryQNote {
 	
-	public ContentFactoryMockup(ArrayList<Integer> pagesSubset) {
+	public ContentFactoryQNoteMockup(ArrayList<Integer> pagesSubset) {
 		super(pagesSubset);
 	}
 	
-	public static ContentFactoryMockup getInstanceWithAllPages() {
-		return new ContentFactoryMockup(new ArrayList<Integer>());
+	public static ContentFactoryQNoteMockup getInstanceWithAllPages() {
+		return new ContentFactoryQNoteMockup(new ArrayList<Integer>());
 	}
 	
-	public static ContentFactoryMockup getInstanceWithSubset(ArrayList<Integer> pageSubset) {
-		return new ContentFactoryMockup(pageSubset);
+	public static ContentFactoryQNoteMockup getInstanceWithSubset(ArrayList<Integer> pageSubset) {
+		return new ContentFactoryQNoteMockup(pageSubset);
 	}
 	
 	@Override

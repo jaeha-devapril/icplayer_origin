@@ -19,6 +19,7 @@ import com.lorepo.icplayer.client.printable.Printable;
 import com.lorepo.icplayer.client.printable.PrintableContentParser;
 import com.lorepo.icplayer.client.printable.PrintableController;
 import com.lorepo.icplayer.client.printable.Printable.PrintableMode;
+import com.lorepo.icplayer.client.utils.Utils;
 
 public class ImageModule extends BasicModuleModel implements IWCAGModuleModel, IPrintableModuleModel {
 
@@ -56,6 +57,7 @@ public class ImageModule extends BasicModuleModel implements IWCAGModuleModel, I
 			return imagePath;
 		}
 		else{
+			Utils.consoleLog("image this.baseURL : " + this.baseURL);
 			return this.baseURL + imagePath;
 		}
 	}

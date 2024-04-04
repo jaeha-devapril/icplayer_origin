@@ -48,6 +48,7 @@ public abstract class ContentParserBase implements IContentParser {
 				Element child = (Element) children.item(i);
 				String name = child.getNodeName(); 
 				
+//				Utils.consoleLog("name : " + name);
 				if(name.compareTo("metadata") == 0){
 					content.metadata.parse(child);
 				}

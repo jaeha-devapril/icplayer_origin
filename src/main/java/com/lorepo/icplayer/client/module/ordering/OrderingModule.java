@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.xml.client.Element;
 import com.google.gwt.xml.client.NodeList;
@@ -29,6 +30,7 @@ import com.lorepo.icplayer.client.printable.Printable;
 import com.lorepo.icplayer.client.printable.PrintableContentParser;
 import com.lorepo.icplayer.client.printable.PrintableController;
 import com.lorepo.icplayer.client.printable.Printable.PrintableMode;
+import com.lorepo.icplayer.client.utils.Utils;
 
 public class OrderingModule extends BasicModuleModel implements IWCAGModuleModel, IPrintableModuleModel, IPrintableOrderingModule {
 	public static final String ERROR_NUMBER_OF_ITEMS = "Error - only one item";

@@ -24,6 +24,7 @@ import com.lorepo.icplayer.client.printable.Printable;
 import com.lorepo.icplayer.client.printable.PrintableContentParser;
 import com.lorepo.icplayer.client.printable.PrintableController;
 import com.lorepo.icplayer.client.printable.Printable.PrintableMode;
+import com.lorepo.icplayer.client.utils.Utils;
 
 public class ChoiceModel extends BasicModuleModel implements IWCAGModuleModel, IPrintableModuleModel{
 
@@ -35,6 +36,9 @@ public class ChoiceModel extends BasicModuleModel implements IWCAGModuleModel, I
 	private boolean isActivity = true;
 	private boolean randomOrder = false;
 	private boolean isHorizontal = false;
+//	private String orderType = "number";
+	private String orderType = "";
+	private String layoutStyle = "vertical";
 	private String langAttribute = "";
 	private ArrayList<SpeechTextsStaticListItem> speechTextItems = new ArrayList<SpeechTextsStaticListItem>();
 	private String printableValue = "";
@@ -46,12 +50,13 @@ public class ChoiceModel extends BasicModuleModel implements IWCAGModuleModel, I
 		
 		addOption(new ChoiceOption("1", "A", 1));
 		addOption(new ChoiceOption("2", "B", 0));
-		
+
 		addPropertyIsMulti();
 		addPropertyOptions(true);
 		addPropertyIsDisabled();
 		addPropertyIsActivity();
 		addPropertyRandomOrder();
+		addPropertyOrderType();
 		addPropertyHorizontalLayout();
 		addPropertyLangAttribute();
 		addPropertySpeechTexts();
@@ -105,6 +110,10 @@ public class ChoiceModel extends BasicModuleModel implements IWCAGModuleModel, I
 		return isMulti;
 	}
 
+	public String getOrderType() {
+		return orderType;
+	}
+
 	@Override
 	protected void parseModuleNode(Element node) {
 		options.clear();
@@ -118,7 +127,24 @@ public class ChoiceModel extends BasicModuleModel implements IWCAGModuleModel, I
 			isDisabled = XMLUtils.getAttributeAsBoolean(choice, "isDisabled", false);
 			isActivity = XMLUtils.getAttributeAsBoolean(choice, "isActivity", true);
 			randomOrder = XMLUtils.getAttributeAsBoolean(choice, "randomOrder", false);
-			isHorizontal = XMLUtils.getAttributeAsBoolean(choice, "isHorizontal", false);
+			String strHorizontal = XMLUtils.getAttributeAsString(choice, "isHorizontal");
+			Utils.consoleLog("strHorizontal : " + strHorizontal);
+			boolean isQnoteChoice = ( strHorizontal != "true" && strHorizontal != "false");
+			if( Utils.isQNote && isQnoteChoice ) {
+				String strOrderType = XMLUtils.getAttributeAsString(choice, "orderType");
+				if (strOrderType.length() > 2) {
+					orderType = strOrderType;
+				};
+				layoutStyle = XMLUtils.getAttributeAsString(choice, "isHorizontal");
+				//absolute layout 인 경우 랜덤오더 적용 안됨.
+				if (layoutStyle == "absolute") {
+					randomOrder = false;
+				} else {
+					randomOrder = XMLUtils.getAttributeAsBoolean(choice, "randomOrder", false);
+				}
+			}else{
+				isHorizontal = XMLUtils.getAttributeAsBoolean(choice, "isHorizontal", false);
+			}
 			langAttribute = XMLUtils.getAttributeAsString(choice, "langAttribute");
 			printableValue = XMLUtils.getAttributeAsString(choice, "printable");
 			this.speechTextItems.get(0).setText(XMLUtils.getAttributeAsString(choice, "selected"));
@@ -171,7 +197,13 @@ public class ChoiceModel extends BasicModuleModel implements IWCAGModuleModel, I
 		choice.setAttribute("isDisabled", Boolean.toString(isDisabled));
 		choice.setAttribute("isActivity", Boolean.toString(isActivity));
 		choice.setAttribute("randomOrder", Boolean.toString(randomOrder));
-		choice.setAttribute("isHorizontal", Boolean.toString(isHorizontal));
+		choice.setAttribute("orderType", orderType);
+		if( Utils.isQNote ){
+			choice.setAttribute("isHorizontal", layoutStyle);
+		}else{
+			choice.setAttribute("isHorizontal", Boolean.toString(isHorizontal));
+		}
+
 		choice.setAttribute("langAttribute", langAttribute);
 		choice.setAttribute("printable", printableValue);
 		choice.setAttribute("selected", this.speechTextItems.get(0).getText());
@@ -219,17 +251,32 @@ public class ChoiceModel extends BasicModuleModel implements IWCAGModuleModel, I
 				
 			@Override
 			public void setValue(String newValue) {
-				boolean value = (newValue.compareToIgnoreCase("true") == 0); 
-				
-				if(value!= isHorizontal){
-					isHorizontal = value;
-					sendPropertyChangedEvent(this);
-				}
+				if( Utils.isQNote ){
+					String value = (newValue);
+
+					if(value!= layoutStyle){
+						layoutStyle = value;
+						sendPropertyChangedEvent(this);
+					}
+				}else {
+					boolean value = (newValue.compareToIgnoreCase("true") == 0);
+
+					if (value != isHorizontal) {
+						isHorizontal = value;
+						sendPropertyChangedEvent(this);
+					}
+				};
+
 			}
 			
 			@Override
 			public String getValue() {
-				return isHorizontal ? "True" : "False";
+				if(Utils.isQNote ){
+					return layoutStyle;
+				}else {
+					return isHorizontal ? "True" : "False";
+				}
+
 			}
 			
 			@Override
@@ -253,7 +300,16 @@ public class ChoiceModel extends BasicModuleModel implements IWCAGModuleModel, I
 	}
 	
 	public boolean isHorizontalLayout() {
-		return isHorizontal;
+		if(Utils.isQNote ){
+			return layoutStyle == "horizontal";
+		}else{
+			return isHorizontal;
+		}
+	}
+	
+	public String getLayoutStyle() {
+//		return isHorizontal;
+		return layoutStyle;
 	}
 	
 	private void addPropertyIsMulti() {
@@ -539,6 +595,42 @@ public class ChoiceModel extends BasicModuleModel implements IWCAGModuleModel, I
 		
 		addProperty(property);
 	}
+
+	private void addPropertyOrderType() {
+		
+		IProperty property = new IProperty() {
+
+			@Override
+			public void setValue(String newValue) {
+				orderType = newValue;
+				sendPropertyChangedEvent(this);
+			}
+
+			@Override
+			public String getValue() {
+				return orderType;
+			}
+
+			@Override
+			public String getName() {
+				return DictionaryWrapper.get("orderType");
+			}
+
+			@Override
+			public boolean isDefault() {
+				return false;
+			}
+
+			@Override
+			public String getDisplayName() {
+				return DictionaryWrapper.get("orderType");
+			}
+		};
+
+		addProperty(property);
+	}
+	
+	
 	
 	private void addPropertyLangAttribute() {
 		IProperty property = new IProperty() {

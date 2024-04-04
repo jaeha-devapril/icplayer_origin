@@ -39,6 +39,7 @@ public class AddonModel extends BasicModuleModel implements IPrintableModuleMode
 	private PrintableContentParser.ParsedListener printableAsyncCallback = null;
 	private String printableAsyncID = "";
 	private String printableState = "";
+	private String pageURL = "";
 
 	public interface OnAddonReleaseAction {
 		public void onRelease();
@@ -151,6 +152,17 @@ public class AddonModel extends BasicModuleModel implements IPrintableModuleMode
 	public void setAddonId(String id) {
 		this.addonId = id;
 	}
+
+	public String getPageURL() {
+		return pageURL;
+	}
+
+
+	public void setPageURL(String pageURL) {
+		this.pageURL = pageURL;
+	}
+
+
 
 
 	public void addAddonParam(String name, String displayName, String type) {
@@ -327,7 +339,9 @@ public class AddonModel extends BasicModuleModel implements IPrintableModuleMode
 	
 	public JavaScriptObject createJsModel(IPropertyProvider provider) {
 
+
 		JavaScriptObject jsModel = JavaScriptObject.createArray();
+		addPropertyToJSObject(jsModel, "pageURL", this.pageURL);
 		for(int i=0; i < provider.getPropertyCount(); i++){
 			IProperty property = provider.getProperty(i);
 			if(property instanceof IListProperty){

@@ -1,23 +1,15 @@
 package com.lorepo.icplayer.client.xml.page;
 
-import java.util.Iterator;
-
 import com.lorepo.icplayer.client.model.page.Page;
 import com.lorepo.icplayer.client.xml.IParser;
 import com.lorepo.icplayer.client.xml.IProducingLoadingListener;
 import com.lorepo.icplayer.client.xml.XMLVersionAwareFactory;
-import com.lorepo.icplayer.client.xml.page.parsers.IPageParser;
-import com.lorepo.icplayer.client.xml.page.parsers.PageParser_v0;
-import com.lorepo.icplayer.client.xml.page.parsers.PageParser_v1;
-import com.lorepo.icplayer.client.xml.page.parsers.PageParser_v2;
-import com.lorepo.icplayer.client.xml.page.parsers.PageParser_v3;
-import com.lorepo.icplayer.client.xml.page.parsers.PageParser_v4;
-import com.lorepo.icplayer.client.xml.page.parsers.PageParser_v5;
-import com.lorepo.icplayer.client.xml.page.parsers.PageParser_v6;
-import com.lorepo.icplayer.client.xml.page.parsers.PageParser_v7;
+import com.lorepo.icplayer.client.xml.page.parsers.*;
+
+import java.util.Iterator;
 
 public class PageFactory extends XMLVersionAwareFactory {
-	
+
 	Page producedPage = null;
 	static String defaultLayoutID = null;
 

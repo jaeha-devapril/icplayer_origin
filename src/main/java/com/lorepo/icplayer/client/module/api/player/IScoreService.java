@@ -1,7 +1,7 @@
 package com.lorepo.icplayer.client.module.api.player;
 
 import com.lorepo.icplayer.client.model.Content.ScoreType;
-
+import java.util.HashMap;
 
 public interface IScoreService {
 
@@ -17,4 +17,8 @@ public interface IScoreService {
 	void setPageScore(IPage page, PageScore score);
 	public ScoreType getScoreType();
 	void lessonScoreReset(boolean resetChecks, boolean resetMistakes);
+	public void setTextGroupID(String moduleID, String GroupID);
+	public HashMap<String, String> getTextGroupID();
+	public void	setGroupTexts(String moduleName, String text);
+	public HashMap<String, HashMap<String, String>> getGroupTexts();
 }

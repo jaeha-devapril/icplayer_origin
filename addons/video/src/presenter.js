@@ -918,6 +918,19 @@ function Addonvideo_create() {
         }
     };
 
+//    presenter.play = function () {
+//        if (presenter.videoObject.paused) {
+//            presenter.play();
+//        }
+//    }
+//
+//    presenter.payse = function () {
+//        if (!presenter.videoObject.paused) {
+//            presenter.pause();
+//        }
+//    }
+
+
     presenter.setBurgerMenu = function () {
         var BURGER_MENU = "time_labels";
         if (!presenter.configuration.defaultControls) {
@@ -1006,6 +1019,8 @@ function Addonvideo_create() {
                 }
             });
         }
+
+
 
         presenter.addTabindex(presenter.configuration.isTabindexEnabled);
 
@@ -1162,6 +1177,42 @@ function Addonvideo_create() {
             'source': presenter.configuration.addonID,
             'item': (presenter.currentMovie + 1),
             'value': 'playing',
+            'score': ''
+        };
+
+        presenter.eventBus.sendEvent('ValueChanged', eventData);
+    };
+
+    //이석웅 추가
+    presenter.sendOnPlayingConfirmEvent = function () {
+        var eventData = {
+            'source': presenter.configuration.addonID,
+            'item': (presenter.currentMovie + 1),
+            'value': 'playing_confirm',
+            'score': ''
+        };
+
+        presenter.eventBus.sendEvent('ValueChanged', eventData);
+    };
+
+    //이석웅 추가
+    presenter.sendOnPauseEvent = function () {
+        var eventData = {
+            'source': presenter.configuration.addonID,
+            'item': (presenter.currentMovie + 1),
+            'value': 'pause',
+            'score': ''
+        };
+
+        presenter.eventBus.sendEvent('ValueChanged', eventData);
+    };
+
+    //이석웅 추가
+    presenter.sendOnStopEvent = function () {
+        var eventData = {
+            'source': presenter.configuration.addonID,
+            'item': (presenter.currentMovie + 1),
+            'value': 'stop',
             'score': ''
         };
 
@@ -1494,6 +1545,7 @@ function Addonvideo_create() {
                 return;
         }
 
+
         if (presenter.videoObject) {
             $(presenter.videoObject).unbind("ended");
             $(presenter.videoObject).unbind("error");
@@ -1694,7 +1746,7 @@ function Addonvideo_create() {
           if (parts.length === 2) {
               return '\\alt{' + parts[0] + '|' + parts[1] + '}';
           }
-          if (parts.length === 3) {
+          if (parts.length === 3) {ㄴㅅ
               return '\\alt{' + parts[0] + '|' + parts[1] + '}[lang ' + parts[2] + ']';
           }
           return '[' + parts.join('|') + ']';
@@ -1975,7 +2027,24 @@ function Addonvideo_create() {
         presenter.$view.removeClass(className);
     };
 
+//    presenter.play = deferredSyncQueue.decorate(function () {
+//        presenter.removeWaterMark();
+//        presenter.hidePlayButton();
+//        presenter.loadVideoAtPlayOnMobiles();
+//
+//        if (presenter.videoObject.paused) {
+//            presenter.videoObject.play();
+//            presenter.addClassToView('playing');
+//        }
+//        presenter.usedStop = false;
+//        presenter.playTriggered = true;
+//    });
+
     presenter.play = deferredSyncQueue.decorate(function () {
+        presenter.sendOnPlayingConfirmEvent();
+    });
+
+     presenter.DoPlay = deferredSyncQueue.decorate(function () {
         presenter.removeWaterMark();
         presenter.hidePlayButton();
         presenter.loadVideoAtPlayOnMobiles();
@@ -1999,6 +2068,7 @@ function Addonvideo_create() {
             }
             presenter.removeClassFromView('playing');
             presenter.posterPlayButton.removeClass('video-poster-pause');
+            presenter.sendOnStopEvent();
     });
 
     presenter.pause = deferredSyncQueue.decorate(function () {
@@ -2009,6 +2079,7 @@ function Addonvideo_create() {
             presenter.removeClassFromView('playing');
         }
         presenter.usedStop = false;
+         presenter.sendOnPauseEvent();
     });
 
     presenter.previous = function () {

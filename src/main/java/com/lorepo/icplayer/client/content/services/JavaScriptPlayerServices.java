@@ -1,5 +1,7 @@
 package com.lorepo.icplayer.client.content.services;
 
+
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -13,6 +15,7 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.lorepo.icf.utils.JavaScriptUtils;
 import com.lorepo.icf.utils.StringUtils;
 import com.lorepo.icplayer.client.PlayerApp;
+import com.lorepo.icplayer.client.model.Content;
 import com.lorepo.icplayer.client.content.services.dto.ScaleInformation;
 import com.lorepo.icplayer.client.content.services.externalNotifications.ObserverJSService;
 import com.lorepo.icplayer.client.model.adaptive.AdaptiveConnection;
@@ -20,6 +23,7 @@ import com.lorepo.icplayer.client.module.addon.AddonPresenter;
 import com.lorepo.icplayer.client.model.page.group.GroupPresenter;
 import com.lorepo.icplayer.client.module.api.IPresenter;
 import com.lorepo.icplayer.client.module.api.player.IChapter;
+import com.lorepo.icplayer.client.module.api.player.IContent;
 import com.lorepo.icplayer.client.module.api.player.IPage;
 import com.lorepo.icplayer.client.module.api.player.IPlayerServices;
 import com.lorepo.icplayer.client.module.api.player.PageScore;
@@ -133,6 +137,14 @@ public class JavaScriptPlayerServices {
 			commands.gotoPageIndex = function(index) {
 				x.@com.lorepo.icplayer.client.content.services.JavaScriptPlayerServices::gotoPageIndex(I)(index);
 			};
+
+			commands.nextPage = function() {
+				x.@com.lorepo.icplayer.client.content.services.JavaScriptPlayerServices::gotoNextPage()();
+			};
+			
+			commands.prevPage = function() {
+				x.@com.lorepo.icplayer.client.content.services.JavaScriptPlayerServices::gotoPrevPage()();
+			};
 			
 			commands.gotoPageId = function(pageId) {
 				x.@com.lorepo.icplayer.client.content.services.JavaScriptPlayerServices::gotoPageId(Ljava/lang/String;)(pageId);
@@ -165,6 +177,16 @@ public class JavaScriptPlayerServices {
 			commands.checkAnswers = function() {
 				return x.@com.lorepo.icplayer.client.content.services.JavaScriptPlayerServices::checkAnswers()();
 			};
+
+//			//work mode 추가
+//			commands.setWorkMode = function() {
+//				return x.@com.lorepo.icplayer.client.content.services.JavaScriptPlayerServices::setWorkMode()();
+//			};
+//
+//			//이석웅 추가
+//			commands.setWorkModeWithCSS = function(isShowCSS) {
+//				return x.@com.lorepo.icplayer.client.content.services.JavaScriptPlayerServices::setWorkModeWithCSS(Z)(isShowCSS);
+//			};
 			
 			commands.uncheckAnswers = function() {
 				return x.@com.lorepo.icplayer.client.content.services.JavaScriptPlayerServices::uncheckAnswers()();
@@ -603,6 +625,28 @@ public class JavaScriptPlayerServices {
 		return playerServices.getCurrentPageIndex();
 	}
 
+	//	석웅 추가
+	private native JavaScriptObject createJsListObject()/*-{
+	    return [];
+	}-*/;
+	
+	private native void addStringElement(JavaScriptObject jsListObject, Content content)/*-{
+	    jsListObject.push(content);
+	}-*/;
+
+	private JavaScriptObject convertListToJsList(ArrayList<Content> list){
+	    JavaScriptObject jsListObject = createJsListObject();
+	    for (Content content : list){
+	        addStringElement(jsListObject, content);
+	    }
+	    return jsListObject; 
+	}
+
+	
+//	private JavaScriptObject getPresentations(){
+//		return convertListToJsList(playerServices.getModels());
+//	}
+
 	private int getPageCount(){
 		return playerServices.getModel().getPageCount();
 	}
@@ -614,6 +658,15 @@ public class JavaScriptPlayerServices {
 	private void gotoPageIndex(int index){
 		playerServices.getCommands().gotoPageIndex(index);
 	}
+
+	private void gotoNextPage(){
+		playerServices.getCommands().nextPage();
+	}
+	
+	private void gotoPrevPage(){
+		playerServices.getCommands().prevPage();
+	}
+	
 
 	private void gotoPageId(String pageId){
 		playerServices.getCommands().gotoPageId(pageId);
@@ -844,6 +897,16 @@ public class JavaScriptPlayerServices {
 		playerServices.getCommands().checkAnswers();
 	}
 
+		//work mode 추가
+//	private void setWorkMode() {
+//		playerServices.getCommands().setWorkMode();
+//	}
+	
+	//work mode 추가
+//	private void setWorkModeWithCSS(boolean isShowCSS) {
+//		playerServices.getCommands().setWorkModeWithCSS(isShowCSS);
+//	}
+	
 	private void uncheckAnswers() {
 		playerServices.getCommands().uncheckAnswers();
 	}

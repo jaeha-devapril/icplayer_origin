@@ -15,6 +15,7 @@ import com.lorepo.icf.scripting.IType;
 import com.lorepo.icf.utils.JSONUtils;
 import com.lorepo.icf.utils.JavaScriptUtils;
 import com.lorepo.icf.utils.StringUtils;
+import com.lorepo.icplayer.client.utils.Utils;
 import com.lorepo.icplayer.client.metadata.IScoreWithMetadataPresenter;
 import com.lorepo.icplayer.client.metadata.ScoreWithMetadata;
 import com.lorepo.icplayer.client.module.IEnterable;
@@ -39,6 +40,7 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 		void setWorkMode();
 		void reset();
 		void setText(String text);
+		void setIndex(int index);
 		String getTextValue();
 		String getWCAGTextValue();
 		void markGapAsCorrect();
@@ -82,6 +84,9 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 		TextElementDisplay getChild(int index);
 		TextElementDisplay getActivity(int index);
 		void setValue(String id, String value);
+
+		void setIndexValue(String id, String index);
+
 		void refreshMath();
 		void refreshGapMath(String id);
 		void hide();
@@ -115,6 +120,7 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 	private final IPlayerServices playerServices;
 	private IDisplay view;
 	private final HashMap<String, String> values = new HashMap<String, String>();
+	private final HashMap<String, String> indexValues = new HashMap<String, String>();
 	private HashMap<String, DraggableItem> consumedItems = new HashMap<String, DraggableItem>();
 	private DraggableItem draggableItem;
 	private JavaScriptObject jsObject;
@@ -138,6 +144,7 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 	public TextPresenter(TextModel module, IPlayerServices services) {
 		this.module = module;
 		this.playerServices = services;
+		this.module.setPlayerSerivice(this.playerServices);
 		isVisible = module.isVisible();
 		isDisabled = module.isDisabled();
 		try {
@@ -148,6 +155,8 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 		} catch(Exception e) {
 			JavaScriptUtils.error(e.getMessage());
 		}
+
+		setTextGroupID();
 	}
 
 	private void connectHandlers() {
@@ -224,6 +233,14 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 		});
 	}
 	
+	// 이석웅 추가
+	// text 의 비순서 정답 체크를 위한 Group ID 설정
+	private void setTextGroupID() {
+		IScoreService scoreService = playerServices.getScoreService();
+		scoreService.setTextGroupID(module.getId(),
+				Utils.getPageGroupID(playerServices.getCurrentPageIndex(), module.getGroupID()));
+	}
+
 	private boolean isShowAnswers() {
 		return module.isActivity() && this.isShowAnswersActive;
 	}
@@ -383,6 +400,8 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 		HashMap<String, String> state = new HashMap<String, String>();
 		state.put("gapUniqueId", module.getGapUniqueId());
 		state.put("values", JSONUtils.toJSONString(values));
+		// 이석웅 추가
+		state.put("index-values", JSONUtils.toJSONString(indexValues));
 
 		if (enteredText != null) {
 			state.put("enteredText", enteredText);
@@ -430,11 +449,25 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 
 		String oldGapId = state.get("gapUniqueId") + "-";
 		values.clear();
+		indexValues.clear();
+
 		HashMap<String, String> oldValues = JSONUtils.decodeHashMap(state.get("values"));
 		for (String key : oldValues.keySet()) {
 			String newKey = key.replace(oldGapId, module.getGapUniqueId()+"-");
 			values.put(newKey, oldValues.get(key));
 		}
+
+		// 이석웅 추가
+		try {
+			HashMap<String, String> oldIndexValues = JSONUtils.decodeHashMap(state.get("index-values"));
+			for (String key : oldIndexValues.keySet()) {
+				String newKey = key.replace(oldGapId, module.getGapUniqueId() + "-");
+				indexValues.put(newKey, oldIndexValues.get(key));
+			}
+		} catch (Exception e) {
+		}
+		;
+
 		if (state.containsKey("enteredText")) {
 			enteredText = state.get("enteredText");
 			view.setHTML(enteredText);
@@ -458,6 +491,19 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 				view.setValue(id, value);
 			}
 		}
+
+		// 이석웅 추가
+		// index로 value 설정
+		try {
+			for (String id : indexValues.keySet()) {
+				String index = indexValues.get(id);
+				// view.setValue(index);
+				Utils.consoleLog("setState index: " + index);
+				view.setIndexValue(id, index);
+			}
+		} catch (Exception e) {
+		}
+		;
 
 		ArrayList<Boolean> stateDisabled = JSONUtils.decodeArray(state.get("disabled"));
 		for (int i = 0; i < view.getChildrenCount() && i < stateDisabled.size(); i++) {
@@ -521,7 +567,7 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 
 		for (GapInfo gap : module.getGapInfos()) {
 			enteredValue = getElementText(gap).trim();
-			if (isGapCheckable(gap) && !enteredValue.isEmpty() && !gap.isCorrect(enteredValue)) {
+			if (isGapCheckable(gap) && !enteredValue.isEmpty() && !gap.isCorrect(enteredValue, module.getId(), playerServices)) {
 				errorCount++;
 			}
 		}
@@ -576,6 +622,7 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 		draggableItem = null;
 		consumedItems.clear();
 		values.clear();
+		indexValues.clear();
 		updateScore();
 
 		this.currentState = "";
@@ -667,7 +714,7 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 			GapInfo gap = module.getGapInfos().get(i);
 			enteredValue = getElementText(gap);
 			
-			if (isGapCheckable(gap) && gap.isCorrect(enteredValue)) {
+			if (isGapCheckable(gap) && gap.isCorrect(enteredValue, module.getId(), playerServices)) {
 				scoresDict.put(i + 1, gap.getValue());
 			}
 		}
@@ -907,7 +954,31 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 	protected void valueChangeLogic(String id, String newValue) {
 		GapInfo gap = getGapInfoById(id);
 
+		Utils.consoleLog("valueChangeLogic : " + id + ", " + newValue);
+
+	
+		// inlineChoice의 경우 index를 같이 보낸다.
+		String selectedIndex = "0";
+		String tempNewValue = newValue;
+		Utils.consoleLog("a222");
+		try {
+			if (newValue.contains(Utils.delemiter)) {
+				Utils.consoleLog("a444");
+				newValue = tempNewValue.split(Utils.delemiter)[0];
+				try {
+					selectedIndex = tempNewValue.split(Utils.delemiter)[1];
+				} catch (Exception e) {
+					Utils.consoleLog("valueChangeLogic e : " + e);
+				}
+				;
+			}
+		} catch (Exception e) {
+			Utils.consoleLog("valueChangeLogic2 e : " + e);
+		}
+		;
+
 		values.put(id, newValue);
+		indexValues.put(id, selectedIndex);
 		updateScore();
 
 		String score = Integer.toString(getItemScore(id));
@@ -917,6 +988,7 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 			try {
 				view.getChild(Integer.parseInt(itemID) - 1).setText("");
 				values.remove(id);
+				indexValues.remove(id);
 			} catch(NumberFormatException nfe) {
 				JavaScriptUtils.log(nfe);
 			}
@@ -1025,6 +1097,8 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 		DraggableItem previouslyConsumedItem = consumedItems.get(gapId);
 
 		removeFromItems(gapId);
+
+		indexValues.remove(gapId);
 		fireItemReturnedEvent(previouslyConsumedItem);
 
 		if (shouldFireEvent) {
@@ -1162,6 +1236,26 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 	private void updateScore() {
 		IScoreService scoreService = playerServices.getScoreService();
 		scoreService.setScore(module.getId(), getScore(), getMaxScore());
+
+		updateText();
+	}
+
+	// 이석웅 추가
+	// 사용자 답안 업데이트
+	private void updateText() {
+		IScoreService scoreService = playerServices.getScoreService();
+
+		for (GapInfo gap : module.getGapInfos()) {
+			String enteredValue = getElementText(gap.getId());
+			scoreService.setGroupTexts(module.getId(), enteredValue);
+			// scoreService.setGroupTexts(Utils.getPageGroupID(playerServices.getCurrentPageIndex(),
+			// module.getId()), enteredValue);
+		}
+
+		for (InlineChoiceInfo choice : module.getChoiceInfos()) {
+			String enteredValue = getElementText(choice.getId());
+			scoreService.setGroupTexts(module.getId(), enteredValue);
+		}
 	}
 
 	@Override
@@ -1284,10 +1378,10 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 
 		GapInfo gap = getGapInfoById(itemID);
 		String enteredValue = getElementText(gap);
-		if (enteredValue.equals(gap.getPlaceHolder()) && !gap.isCorrect(gap.getPlaceHolder())) {
+		if (enteredValue.equals(gap.getPlaceHolder()) && !gap.isCorrect(gap.getPlaceHolder(), module.getId(), playerServices)) {
 			enteredValue = "";
 		}
-		if (gap.isCorrect(enteredValue)) {
+		if (gap.isCorrect(enteredValue, module.getId(), playerServices)) {
 			score = gap.getValue();
 		}
 
@@ -1362,6 +1456,10 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 
 		presenter.setUserValue = function(gapId, val) {
 			x.@com.lorepo.icplayer.client.module.text.TextPresenter::setUserValue(ILjava/lang/String;)(gapId, val);
+		}
+
+		presenter.setUserValueWithScore = function(gapId, id, val) {
+		x.@com.lorepo.icplayer.client.module.text.TextPresenter::setUserValueWithScore(ILjava/lang/String;Ljava/lang/String;)(gapId, id, val);
 		}
 
 		presenter.getGapText = function(gapId) {
@@ -1561,6 +1659,33 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 		isMathShowAnswersActive = false;
 	}
 
+	private void setUserValueWithScore(int index, String id, String value) {
+		if (view != null && index <= view.getChildrenCount()) {
+
+			Utils.consoleLog("setUserValueWithScore id : " + id);
+			Utils.consoleLog("setUserValueWithScore value : " + value);
+			// values.put(id, value);
+			// updateScore();
+
+			TextElementDisplay gap = view.getChild(index - 1);
+			gap.setText(value);
+			gap.removeStyleHideAnswers();
+
+			values.put(String.valueOf(id), String.valueOf(value));
+			Utils.consoleLog("setUserValueWithScore values : " + values.get(String.valueOf(id)));
+			updateScore();
+
+//			valueChangeLogic(id, value);
+
+			Utils.consoleLog("setUserValueWithScore values : " + values);
+//			ValueChangedEvent valueEvent = new ValueChangedEvent(module.getId(), id, value, "1");
+//			playerServices.getEventBus().fireEvent(valueEvent);
+		}
+
+		isMathShowAnswersActive = false;
+	}
+
+
 	private void setGapText(int gapIndex, String text) {
 		if (view != null && gapIndex <= view.getChildrenCount() && gapIndex > 0) {
 			TextElementDisplay gap = view.getChild(gapIndex-1);
@@ -1658,18 +1783,40 @@ public class TextPresenter implements IPresenter, IStateful, IActivity, ICommand
 		return module.isActivity();
 	}
 
+//	private boolean isAttempted() {
+//		Utils.consoleLog("isAttempted");
+//		if (isShowAnswers()) {
+//			hideAnswers();
+//		}
+//
+//		for (int index = 0; index < view.getChildrenCount(); index++) {
+//			Utils.consoleLog("isAttempted : " + index + " : " + view.getChild(index).isAttempted());
+//			if (!view.getChild(index).isAttempted()) {
+//				return false;
+//			}
+//		}
+//
+//		return true;
+//	}
+
+	// 이석웅 수정
+	// mathGap 대응
 	private boolean isAttempted() {
+		Utils.consoleLog("isAttempted : " + view.getChildrenCount() + " : ");
 		if (isShowAnswers()) {
 			hideAnswers();
 		}
 
+		int attemptedCnt = 0;
 		for (int index = 0; index < view.getChildrenCount(); index++) {
-			if (!view.getChild(index).isAttempted()) {
-				return false;
+			Utils.consoleLog("isAttempted : " + index + " : " + view.getChild(index).isAttempted());
+			if (view.getChild(index).isAttempted()) {
+				++attemptedCnt;
+//				return true;
 			}
 		}
 
-		return true;
+		return (  (attemptedCnt == view.getChildrenCount()) && (view.getChildrenCount() != 0) );
 	}
 
 	private void setText(String text) {

@@ -61,13 +61,14 @@ public class PageController implements ITextToSpeechController, IPageController 
 	private IPlayerServices playerService;
 	private IModuleFactory moduleFactory;
 	private ArrayList<IPresenter> presenters;
-	private ArrayList<GroupPresenter> groupPresenters; 
+	private ArrayList<GroupPresenter> groupPresenters;
 	private final ScriptingEngine scriptingEngine = new ScriptingEngine();
 	private IPlayerController playerController;
 	private HandlerRegistration valueChangedHandler;
 	private final static String PAGE_TTS_MODULE_ID = "Text_To_Speech1";
 	private boolean isReadingOn = false;
 	private Content contentModel;
+	private int currentPageIdx = -1;
 	private GradualShowAnswersService gradualShowAnswersService;
 	
 	public PageController(IPlayerController playerController) {
@@ -86,6 +87,10 @@ public class PageController implements ITextToSpeechController, IPageController 
 		groupPresenters = new ArrayList<GroupPresenter>();
 		this.playerService = playerServices;
 		moduleFactory = new ModuleFactory(playerService);
+	}
+
+	public void setPageIdx(int pagesIdx) {
+		currentPageIdx = pagesIdx;
 	}
 
 	public void setContent(Content model) {
@@ -186,7 +191,7 @@ public class PageController implements ITextToSpeechController, IPageController 
 	}
 
 	protected void valueChanged(ValueChangedEvent event) {
-		Score.Result result = getCurrentScore();
+		Result result = getCurrentScore();
 		if (result.errorCount == 0 && result.maxScore > 0 && result.score == result.maxScore) {
 			playerService.getEventBus().fireEvent(new CustomEvent("PageAllOk", new HashMap<String, String>()));
 		}
@@ -208,7 +213,10 @@ public class PageController implements ITextToSpeechController, IPageController 
 			String newInlineStyle = deletePositionImportantStyles(module.getInlineStyle());
 			module.setInlineStyle(newInlineStyle);
 			IModuleView moduleView = moduleFactory.createView(module);
-			IPresenter presenter = moduleFactory.createPresenter(module);
+
+			//이석웅 수정 page의 url값 넘겨줌
+//			IPresenter presenter = moduleFactory.createPresenter(module);
+			IPresenter presenter = moduleFactory.createPresenter(module, currentPage.getBaseURL());
 			GroupPresenter groupPresenter = findGroupPresenter(module); 
 			
 			if (groupPresenter != null) {
@@ -383,7 +391,7 @@ public class PageController implements ITextToSpeechController, IPageController 
 
 	public void updateScoreMistakeCounter() {
 		if (currentPage != null && currentPage.isReportable()) {
-			Score.Result result = getCurrentScore();
+			Result result = getCurrentScore();
 			PageScore pageScore = playerService.getScoreService().getPageScore(currentPage.getId());
 			PageScore score = pageScore.updateScore(result.score, result.maxScore, result.errorCount);
 			playerService.getScoreService().setPageScore(currentPage, score.increaseMistakeCounter());
@@ -392,7 +400,7 @@ public class PageController implements ITextToSpeechController, IPageController 
 
 	public void updateScoreWithMistakes(int mistakes) {
 		if (currentPage != null && currentPage.isReportable()) {
-			Score.Result result = getCurrentScore();
+			Result result = getCurrentScore();
 			PageScore pageScore = playerService.getScoreService().getPageScore(currentPage.getId());
 			PageScore score = pageScore.updateScore(result.score, result.maxScore, result.errorCount);
 			playerService.getScoreService().setPageScore(currentPage, score.incrementProvidedMistakes(mistakes));
@@ -401,7 +409,7 @@ public class PageController implements ITextToSpeechController, IPageController 
 
 	public void updateScore(boolean updateCounters) {
 		if (currentPage != null && currentPage.isReportable()) {
-			Score.Result result = getCurrentScore();
+			Result result = getCurrentScore();
 			PageScore pageScore = playerService.getScoreService().getPageScore(currentPage.getId());
 			PageScore score = pageScore.updateScore(result.score, result.maxScore, result.errorCount);
 			playerService.getScoreService().setPageScore(currentPage, updateCounters ? score.incrementCounters() : score);
@@ -410,7 +418,7 @@ public class PageController implements ITextToSpeechController, IPageController 
 
 	public void updateScoreCheckCounter() {
 		if (currentPage != null && currentPage.isReportable()) {
-			Score.Result result = getCurrentScore();
+			Result result = getCurrentScore();
 			PageScore pageScore = playerService.getScoreService().getPageScore(currentPage.getId());
 			PageScore score = pageScore.updateScore(result.score, result.maxScore, result.errorCount);
 			playerService.getScoreService().setPageScore(currentPage, score.incrementCheckCounter());

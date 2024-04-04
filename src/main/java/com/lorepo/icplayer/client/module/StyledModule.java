@@ -33,6 +33,7 @@ class StyledModule extends AbsolutePositioningModule implements IStyledModule {
 	public String getInlineStyle() {
 		return this.semiResponsiveStyles.getInlineStyle(this.getSemiResponsiveID(), this.getDefaultSemiResponsiveID());
 	}
+
 	
 	protected HashMap<String, String> getInlineStyles() {
 		return this.semiResponsiveStyles.getInlineStyles();

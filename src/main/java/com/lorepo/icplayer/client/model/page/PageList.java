@@ -111,6 +111,20 @@ public class PageList extends BasicPropertyProvider implements IChapter{
 		return nodes;
 	}
 
+	public Page getPageByHref(String href){
+		for(IContentNode node : nodes){
+			if(node instanceof Page){
+				Page page = (Page) node;
+				if( page.getHref() == href){
+					return 	page;
+				}
+			}
+
+		}
+
+		return null;
+	}
+
 	public void insertBefore(int index, IContentNode node){
 		nodes.add(index, node);
 	}
@@ -305,7 +319,7 @@ public class PageList extends BasicPropertyProvider implements IChapter{
 		return pageIndex;
 	}
 
-	private Page loadPage(Element node) {
+	public Page loadPage(Element node) {
 		final String name = StringUtils.unescapeXML(node.getAttribute("name"));
 		final String href = node.getAttribute("href");
 		final String pageId = node.getAttribute("id");

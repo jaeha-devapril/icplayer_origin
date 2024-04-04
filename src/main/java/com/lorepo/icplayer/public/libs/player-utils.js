@@ -33,6 +33,22 @@
         }
     };
 
+
+    /**
+     Returns Presentation object
+     @method getPresentation
+
+     @return {Object} current presentation
+     */
+    window.PlayerUtils.prototype.getPresentations = function getPresentations() {
+        if (this.hasOwnProperty("playerServices")) {
+            return this.playerServices.getPresentation();
+        }
+        else {
+            return undefined;
+        }
+    };
+
 /**
      Returns Presentation object
 

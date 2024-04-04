@@ -8,13 +8,15 @@ import com.google.gwt.event.dom.client.FocusEvent;
 import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.user.client.Element;
+import com.lorepo.icplayer.client.module.api.player.IPlayerServices;
 import com.lorepo.icplayer.client.module.text.TextPresenter.TextElementDisplay;
 
 public class FilledGapWidget extends GapWidget implements TextElementDisplay {
 	private ArrayList<HandlerRegistration> filledGapHandlers = new ArrayList<HandlerRegistration>();
 	
-	public FilledGapWidget(GapInfo gi, final ITextViewListener listener){
-		super(gi, listener);
+	public FilledGapWidget(GapInfo gi, String inlineStyles, final ITextViewListener listener, String moduleID, IPlayerServices playerService){
+		super(gi, inlineStyles, listener, moduleID, playerService);
+//		super(gi, listener);
 		this.initialize(listener);
 	}
 
@@ -70,6 +72,11 @@ public class FilledGapWidget extends GapWidget implements TextElementDisplay {
 		}
 		
 		filledGapHandlers.clear();
+	}
+
+	@Override
+	public void setIndex(int index) {
+
 	}
 
 	@Override

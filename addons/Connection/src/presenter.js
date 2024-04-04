@@ -1464,6 +1464,18 @@ function AddonConnection_create() {
 
         const contentWrapper = document.createElement("div");
         contentWrapper.classList.add(presenter.CSS_CLASSES.INNER_WRAPPER);
+
+        //리소스가 상대 경우인경우 도메인 경로 붙여주시
+        try{
+            var contentLower = content.toLowerCase();
+            if( contentLower.indexOf("<img") > -1 && contentLower.indexOf("http") < 0){
+                var src = content.slice(content.indexOf("src")).split('"')[1];
+                console.log("content23423432", src);
+                content = content.replace(src, presenter.model.pageURL + src);
+            }
+        }catch(e){
+        }
+
         contentWrapper.style.direction = isRTL ? "rtl" : "ltr";
         contentWrapper.innerHTML = content;
         !!additionalClassName && contentWrapper.classList.add(additionalClassName);

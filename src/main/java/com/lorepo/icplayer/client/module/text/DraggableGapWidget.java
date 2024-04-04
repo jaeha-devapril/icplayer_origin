@@ -133,7 +133,7 @@ public class DraggableGapWidget extends HTML implements TextElementDisplay, AltT
 	public void setShowErrorsMode(boolean isActivity) {
 		if (isActivity) {
 			if (answerText.length() > 0) {
-				if (gapInfo.isCorrect(answerText)){
+				if (gapInfo.isCorrect(answerText, null, null)){
 					addStyleDependentName("correct");
 					this.gapState = 1;
 				} else {
@@ -232,6 +232,11 @@ public class DraggableGapWidget extends HTML implements TextElementDisplay, AltT
 		if (isFilledGap) {
 			addStyleName("ic_filled_gap");
 		}
+	}
+
+	@Override
+	public void setIndex(int index) {
+
 	}
 
 	@Override

@@ -233,9 +233,10 @@ public class ModuleFactory implements IModuleFactory{
 	
 	
 	@Override
-	public IPresenter createPresenter(IModuleModel module){
+//	public IPresenter createPresenter(IModuleModel module){
+	public IPresenter createPresenter(IModuleModel module, String pageURL){
 		if(module instanceof AddonModel){
-			return new AddonPresenter((AddonModel) module, services);
+			return new AddonPresenter((AddonModel) module, services, pageURL);
 		}
 		else if (module instanceof ButtonModule) {
 			return new ButtonPresenter((ButtonModule) module, services);

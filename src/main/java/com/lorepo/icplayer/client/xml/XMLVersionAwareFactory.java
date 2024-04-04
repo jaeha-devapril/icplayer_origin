@@ -15,12 +15,12 @@ import com.lorepo.icplayer.client.utils.RequestsUtils;
 public abstract class XMLVersionAwareFactory implements IXMLFactory {
 
 	protected HashMap<String, IParser> parsersMap = new HashMap<String, IParser>();
-	
+
 	protected void addParser(IParser parser) {
 		this.parsersMap.put(parser.getVersion(), parser);
 	}
-	
-	
+
+
 	@Override
 	public void load(String fetchUrl, IProducingLoadingListener listener) {
 		try {
@@ -35,20 +35,20 @@ public abstract class XMLVersionAwareFactory implements IXMLFactory {
 
 			@Override
 			public void onResponseReceived(String fetchURL, Request request,
-					Response response) {
+										   Response response) {
 				if (response.getStatusCode() == 200 || response.getStatusCode() == 0) {
-				Object producedItem = produce(response.getText(), fetchURL);
-				listener.onFinishedLoading(producedItem);
-			} else {
-				// Handle the error.  Can get the status text from response.getStatusText()
-				listener.onError("Wrong status: " + response.getText());
-			}
-				
+					Object producedItem = produce(response.getText(), fetchURL);
+					listener.onFinishedLoading(producedItem);
+				} else {
+					// Handle the error.  Can get the status text from response.getStatusText()
+					listener.onError("Wrong status: " + response.getText());
+				}
+
 			}
 
 			@Override
 			public void onError(Request request, Throwable exception) {
-				listener.onFinishedLoading(null);		
+				listener.onFinishedLoading(null);
 			}
 		};
 	}
@@ -57,7 +57,12 @@ public abstract class XMLVersionAwareFactory implements IXMLFactory {
 		Element xml = XMLParser.parse(xmlString).getDocumentElement();
 		String version = XMLUtils.getAttributeAsString(xml, "version", "1");
 		Object producedContent = this.parsersMap.get(version).parse(xml);
-		
+
 		return producedContent;
+	}
+
+	@Override
+	public void unload() {
+
 	}
 }

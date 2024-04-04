@@ -7,6 +7,8 @@ import com.google.gwt.regexp.shared.RegExp;
 import com.google.gwt.user.client.ui.HTML;
 import com.lorepo.icf.utils.StringUtils;
 import com.lorepo.icf.utils.UUID;
+import com.lorepo.icplayer.client.utils.Utils;
+import com.lorepo.icplayer.client.PlayerEntryPoint;
 import com.lorepo.icplayer.client.model.alternativeText.AlternativeTextService;
 import com.lorepo.icplayer.client.module.NestedAddonUtils;
 import com.lorepo.icplayer.client.module.text.LinkInfo.LinkType;
@@ -39,6 +41,14 @@ public class TextParser {
 	private int gapMaxLength = 0;
 	private boolean editorMode = false;
 	private boolean useEscapeCharacterInGap = false;
+	// 이석웅 추가
+	private String gapStyles = "";
+	private boolean multipleLines = false;
+	private int gapHeight = 0;
+	private String isHandwritingInput = "None";
+	private boolean isIgnoreSpace = false;
+	private boolean isQuestionNumber = false;
+
 	private List<String> gapsOrder;
 	private boolean hasSyntaxError = false;
 	private String langTag = "";
@@ -86,12 +96,38 @@ public class TextParser {
 		return parse(srcText);
 	}
 
+	public static native String decodeURIComponent(String strValue) /*-{
+		return decodeURIComponent(strValue);
+	}-*/;
+
 	public ParserResult parse (String srcText) {
 		this.gapsOrder = calculateGapsOrder(srcText);
 
 		parserResult = new ParserResult();
 		parserResult.originalText = srcText;
 		srcText = srcText.replaceAll("\\s+", " ");
+		// underline 치환처리
+		if (PlayerEntryPoint.subject.toUpperCase().equals("MATH")) {
+			srcText = srcText.replaceAll("<u>", "<span class=\"underline_math\">");
+			srcText = srcText.replaceAll("</u>", "</span>");
+//			srcText = srcText.replaceAll("style=\"text-decoration: underline;\"", "class=\"underline_math\"");
+		} else {
+			srcText = srcText.replaceAll("<u>", "<span class=\"underline_korn\">");
+			srcText = srcText.replaceAll("</u>", "</span>");
+//			srcText = srcText.replaceAll("style=\"text-decoration: underline;\"", "class=\"underline_korn\"");
+		}
+
+		// 사파리 브라우저에서 VAGRounded BT 폰트일경우 &nbsp 예외 처리
+		 if( srcText.indexOf("&nbsp;") > -1 ) {
+			 Utils.consoleLog("srcText 1 : " + srcText);
+			 srcText = Utils.parseNBSP(srcText); //nbsp 처리
+			 Utils.consoleLog("srcText 2 : " + srcText);
+		 };
+
+//		 try {
+//			 srcText = decodeURIComponent(srcText);
+//		 }catch (Exception e){};
+
 		hasSyntaxError = false;
 		try {
 			if (this.editorMode) {
@@ -169,6 +205,43 @@ public class TextParser {
 				.replaceAll("\\\\filledGap\\{" + availableCharsInGapContent + "\\}", "#4#")
 				.replaceAll("\\\\audio\\{" + availableCharsInGapContent + "\\}", "#5#");
 	}
+
+	// mathJax Parser
+//	private String makeMathjaxFrac(String state) {
+//		String parsedText = state;
+//
+//		try {
+//			// var arrResult = [];
+//			// console.log("makeMathjaxFrac state", state);
+//			Utils.consoleLog("makeMathjaxFrac state : " + state);
+//
+//			// Pattern p = Pattern.compile("\\[[{0-9}]*frac[{0-9}]*\\]");
+//			// Matcher matcher = p.matcher(state);
+//
+//			final String pattern = "\\[[{0-9}]*frac[{0-9}]*\\]";
+//			RegExp gapRegExp = RegExp.compile(pattern);
+//			MatchResult matchResult;
+//			String replaceText = "";
+//
+//			while ((matchResult = gapRegExp.exec(parsedText)) != null) {
+//				if (matchResult.getGroupCount() > 0) {
+//					String group = matchResult.getGroup(0);
+//
+//					Utils.consoleLog("makeMathjaxFrac group : " + group);
+//
+//					parsedText = parsedText.replaceFirst(pattern, replaceText);
+//				} else {
+//					break;
+//				}
+//			}
+//			return parsedText;
+//
+//
+//		} catch (Exception e) {
+//			Utils.consoleLog("makeMathjaxFrac e : " + e);
+//		}
+//		return parsedText;
+//	}
 
 	private ParserResult parseInEditorMode(String srcText) {
 		ParserResult result = new ParserResult();
@@ -281,6 +354,9 @@ public class TextParser {
 				GapInfo gi = new GapInfo(id, Integer.parseInt(value), isCaseSensitive, isIgnorePunctuation, gapMaxLength, isNumericOnly, langTag);
 				String[] answers = answer.split("\\|");
 				for (int i = 0; i < answers.length; i++) {
+					// || 로 구분자 잘못 넣었을시 빈칸도 정답처리 되는 현상 막기 위해서
+					if (answers[i].equals("") || answers[i].length() == 0)
+						continue;
 					gi.addAnswer(answers[i]);
 				}
 				parserResult.gapInfos.add(gi);
@@ -293,7 +369,14 @@ public class TextParser {
 	}
 	
 	private DomElementManipulator createGapInputElement(String id, String answer, Map<String,String> gapOptions) {
-		DomElementManipulator inputElement = new DomElementManipulator("input");
+//		DomElementManipulator inputElement = new DomElementManipulator("input");
+		DomElementManipulator inputElement;
+		if (multipleLines) {
+			inputElement = new DomElementManipulator("textarea");
+		} else {
+			inputElement = new DomElementManipulator("input");
+		}
+
 		inputElement.setHTMLAttribute("id", id);
 		inputElement.setHTMLAttribute("type", "edit");
 		inputElement.setHTMLAttribute("data-gap", "editable");
@@ -302,6 +385,12 @@ public class TextParser {
 		}
 		
 		inputElement.setHTMLAttribute("size", "" + answer.length());
+		try {
+			inputElement.setHTMLAttribute("isHandwritingInput", isHandwritingInput);
+		} catch (Exception e) {
+		}
+		;
+
 		inputElement.addClass("ic_gap");
 		if (this.editorMode) {
 			inputElement.setHTMLAttribute("readonly", true);
@@ -338,6 +427,10 @@ public class TextParser {
 			String[] answers = answer.split("\\|");
 			int maxValue = 0;
 			for (int i = 0; i < answers.length; i++) {
+				// || 로 구분자 잘못 넣었을시 빈칸도 정답처리 되는 현상 막기 위해서
+				if (answers[i].equals("") || answers[i].length() == 0)
+					continue;
+
 				if (answers[i].length() > maxValue) {
 					maxValue = answers[i].length();
 				}
@@ -354,7 +447,15 @@ public class TextParser {
 	}
 	
 	private DomElementManipulator createFilledGapInputElement(String placeholder, String answer, String id, int maxAnswerLength, Map<String,String> gapOptions) {
-		DomElementManipulator inputElement = new DomElementManipulator("input");
+		// DomElementManipulator inputElement = new DomElementManipulator("input");
+		DomElementManipulator inputElement;
+		Utils.consoleLog("multipleLines : " +  multipleLines);
+		if (multipleLines) {
+			inputElement = new DomElementManipulator("textarea");
+		} else {
+			inputElement = new DomElementManipulator("input");
+		}
+
 		inputElement.setHTMLAttribute("data-gap", "filled");
 		if (this.editorMode) {
 			inputElement.setHTMLAttribute("data-gap-value", "\\filledGap{" + placeholder + "|" + answer + "}"+createGapOptionString(gapOptions));
@@ -363,6 +464,12 @@ public class TextParser {
 		inputElement.setHTMLAttribute("type", "edit");
 		inputElement.setHTMLAttribute("size", "" + Math.max(maxAnswerLength, placeholder.length()));
 		inputElement.setHTMLAttribute("placeholder", placeholder);
+		try {
+			inputElement.setHTMLAttribute("isHandwritingInput", isHandwritingInput);
+		} catch (Exception e) {
+		}
+		;
+
 		inputElement.addClass("ic_filled_gap");
 		if (this.editorMode) {
 			inputElement.setHTMLAttribute("readonly", true);
@@ -398,6 +505,10 @@ public class TextParser {
 					isCaseSensitive, isIgnorePunctuation, gapMaxLength, isNumericOnly, langTag);
 			String[] answers = answer.split("\\|");
 			for (int i = 0; i < answers.length; i++) {
+				// || 로 구분자 잘못 넣었을시 빈칸도 정답처리 되는 현상 막기 위해서
+				if (answers[i].equals("") || answers[i].length() == 0)
+					continue;
+
 				gi.addAnswer(answers[i]);
 			}
 			parserResult.gapInfos.add(gi);
@@ -1084,6 +1195,9 @@ public class TextParser {
 		this.gapWidth = gapWidth;
 	}
 
+public void setGapHeight(int gapHeight) {
+		this.gapHeight = gapHeight;
+	}
 
 	public void setGapMaxLength(int gapMaxLength) {
 		this.gapMaxLength = gapMaxLength;
@@ -1091,6 +1205,22 @@ public class TextParser {
 
 	public void setUseEscapeCharacterInGap(boolean isUsing) {
 		this.useEscapeCharacterInGap = isUsing;
+	}
+
+	public void setGapStyles(String styles) {
+		this.gapStyles = styles;
+	}
+
+	public void seMultipleLines(Boolean multipleLines) {
+		this.multipleLines = multipleLines;
+	}
+
+	public void setIsHandwritingInput(String isHandwritingInput) {
+		this.isHandwritingInput = isHandwritingInput;
+	}
+
+	public void setIsQuestionNumber(Boolean isQuestionNumber) {
+		this.isQuestionNumber = isQuestionNumber;
 	}
 
 	public List<String> getGapsOrder () {
@@ -1159,6 +1289,9 @@ public class TextParser {
 		String answersWithEscapedAltText = AlternativeTextService.escapeAltText(answer);
 		String[] answers = answersWithEscapedAltText.split("\\|");
 		for (String singleAnswer : answers) {
+			// || 로 구분자 잘못 넣었을시 빈칸도 정답처리 되는 현상 막기 위해서
+			if (singleAnswer.equals("") || singleAnswer.length() == 0)
+				continue;
 			gi.addAnswer(singleAnswer);
 		}
 	}

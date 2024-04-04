@@ -19,6 +19,7 @@ import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.ui.ToggleButton;
+import com.lorepo.icplayer.client.utils.Utils;
 import com.lorepo.icplayer.client.module.api.event.DefinitionEvent;
 import com.lorepo.icplayer.client.module.choice.ChoicePresenter.IOptionDisplay;
 import com.lorepo.icplayer.client.module.text.LinkInfo;
@@ -38,34 +39,64 @@ public class OptionView extends ToggleButton implements IOptionDisplay{
 	private EventBus eventBus;
 	
 	private boolean isTouched = false;
+
+	private String stylePrimaryName = "";
 	
-	public OptionView(ChoiceOption option, boolean isMulti){
+	public OptionView(ChoiceOption option, boolean isMulti, String layoutStyle, int order, String orderType){
 		super();
 		this.choiceOption = option;
-		initUI(isMulti);
+		initUI(isMulti, layoutStyle, order+1, orderType);
 		setListener(this.getElement());
 	}
 
 	
-	private void initUI(boolean isMulti) {
+	private void initUI(boolean isMulti, String layoutStyle, int order, String orderType) {
 		
 		TextParser parser = new TextParser();
 		parserResult = parser.parse(choiceOption.getText());
 		audioInfos = parserResult.audioInfos;
+		// 이미지 경로 수정
+		Utils.consoleLog("Utils.isQNote : " + Utils.isQNote +" : " +Utils.baseURL);
+		Utils.consoleLog("parserResult : " + parserResult.parsedText);
+		if( Utils.isQNote ) {
+			parserResult.parsedText = parserResult.parsedText.replaceAll("../resources/", Utils.baseURL +  "../resources/");
+		}
 		this.setHTML(parserResult.parsedText);
 
-		if(isMulti){
-			setStylePrimaryName("ic_moption");
-		}
-		else{
-			setStylePrimaryName("ic_soption");
+		Utils.consoleLog("initUI Utils.isQNote : " + Utils.isQNote);
+		Utils.consoleLog("initUI orderType: " + orderType);
+		if( Utils.isQNote ) {
+			//지정되지 않은경우
+			if( orderType == ""){
+				if(isMulti){
+					setStylePrimaryName("ic_moption");
+				}
+				else{
+					setStylePrimaryName("ic_soption");
+				}
+			}else {
+				stylePrimaryName = "ic_moption";
+				if (layoutStyle == "absolute") {
+					stylePrimaryName = "ic_moption";
+					setStyleName(getStylePrimaryName("ic_moption_absolute", order, orderType));
+				} else {
+					setStyleName("ic_moption");
+				}
+			};
+		}else{
+			if(isMulti){
+				setStylePrimaryName("ic_moption");
+			}
+			else{
+				setStylePrimaryName("ic_soption");
+			}
 		}
 
 		setElementId();
 	}
 	
 	public boolean isEnable() {
-		return super.isEnabled(); 
+		return super.isEnabled();
 	}
 	
 	private native void setListener(Element el)/*-{
@@ -85,6 +116,24 @@ public class OptionView extends ToggleButton implements IOptionDisplay{
 			}
 		});
 	}-*/;
+	
+	private String getStylePrimaryName(String defaultStyle, int order, String orderType) {
+		String retVal = "";
+		if( orderType == "" ) {
+			retVal = defaultStyle;
+		}else {
+//			if( orderType == "circle" || orderType == "circle2" || orderType == "check" || orderType == "rect" || orderType == "cross" || orderType == "triangle") {
+			if( orderType.contains("check") || orderType.contains("rect") || orderType.contains("cross") || orderType.contains("triangle") ) {
+				retVal = defaultStyle + "_"+ orderType;
+			}else {
+				retVal = defaultStyle + "_"+ orderType + "_" + order;
+			}
+		}
+		
+		Utils.consoleLog("retVal : " + orderType+ " , " + retVal);
+		return retVal;
+	}
+
 	
 	@Override
 	public void onBrowserEvent(Event event) {
@@ -168,33 +217,43 @@ public class OptionView extends ToggleButton implements IOptionDisplay{
 	@Override
 	public void setWrongStyle() {	
 		if (isDown()) {
-			addStyleDependentName("down-wrong");
+			//			addStyleDependentName("down-wrong");
+			addStyleName(stylePrimaryName + "-down-wrong");
 		} else {
-			addStyleDependentName("up-wrong");
+			//			addStyleDependentName("up-wrong");
+			addStyleName(stylePrimaryName + "-up-wrong");
 		}
 	}
 
 	@Override
 	public void setCorrectStyle() {
 		if (isDown()) {
-			addStyleDependentName("down-correct");
+			//			addStyleDependentName("down-correct");
+			addStyleName(stylePrimaryName + "-down-correct");
 		} else {
-			addStyleDependentName("up-correct");
+			//			addStyleDependentName("up-correct");
+			addStyleName(stylePrimaryName + "-up-correct");
 		}
 	}
 	
 	@Override
 	public void setCorrectAnswerStyle() {
-		addStyleDependentName("down-correct-answer");
+		//		addStyleDependentName("down-correct-answer");
+		addStyleName(stylePrimaryName + "-down-correct-answer");
 	}
 	
 	@Override
 	public void resetStyles() {
-		removeStyleDependentName("up-correct");
-		removeStyleDependentName("up-wrong");
-		removeStyleDependentName("down-correct");
-		removeStyleDependentName("down-correct-answer");
-		removeStyleDependentName("down-wrong");
+		//		removeStyleDependentName("up-correct");
+		//		removeStyleDependentName("up-wrong");
+		//		removeStyleDependentName("down-correct");
+		//		removeStyleDependentName("down-correct-answer");
+		//		removeStyleDependentName("down-wrong");
+		removeStyleName(stylePrimaryName + "-up-correct");
+		removeStyleName(stylePrimaryName + "-up-wrong");
+		removeStyleName(stylePrimaryName + "-down-correct");
+		removeStyleName(stylePrimaryName + "-down-correct-answer");
+		removeStyleName(stylePrimaryName + "-down-wrong");
 		removeStyleName("ic_soption-markedAsCorrect");
 		removeStyleName("ic_soption-markedAsWrong");
 	}

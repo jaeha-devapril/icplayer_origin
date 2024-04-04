@@ -12,6 +12,9 @@ public interface IModuleFactory {
 	public IModuleModel createModel(String xmlNodeName);
 	public IModuleView createView(IModuleModel module);
 	public GroupView createView(Group group);
-	public IPresenter createPresenter(IModuleModel model);
+	//이석웅 수정
+//	public IPresenter createPresenter(IModuleModel model);
+	public IPresenter createPresenter(IModuleModel model, String pageURL);
+
 	public GroupPresenter createPresenter(Group group); 
 }

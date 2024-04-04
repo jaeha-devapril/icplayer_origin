@@ -70,7 +70,12 @@ function AddonSVG2_create(){
         cw = cw.replace("px", "");
         ch = ch.replace("px", "");
 
-        el.attr('viewBox', '0 0 ' + cw + ' ' + ch);
+        cw = (parseInt(cw)+1) + "";
+        ch = (parseInt(ch)+1) + "";
+
+//        el.attr('viewBox', '0 0 ' + cw + ' ' + ch);
+//        el.attr('viewBox', '-1 -1 ' + cw + ' ' + ch);
+           el.attr('viewBox', '-1 -1 ' + cw + ' ' + ch);
         el.attr('preserveAspectRatio', !aspect ? 'xMinYMin' : 'none');
         el.attr('width', '100%');
         el.attr('height', '100%');

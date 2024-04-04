@@ -185,8 +185,8 @@ public class AbsolutePositioningModule extends BasicPropertyProvider implements 
 	public void copyConfiguration(String lastSeenLayout) {
 		this.semiResponsivePositions.copyConfiguration(lastSeenLayout);
 	}
-	
-	protected String getSemiResponsiveID() {
+
+	public String getSemiResponsiveID() {
 		return this.semiResponsivePositions.getSemiResponsiveLayoutID();
 	}
 	

@@ -60,6 +60,13 @@ public class Content implements IContentBuilder, IContent {
 		this.commonPages = new PageList("commons");
 	}
 
+//	public Content(){
+//	}
+	
+	public void makeContent() {
+		
+	}
+
 	public void setPlayerController(IPlayerServices ps) {
 		pages.setPlayerServices(ps);
 	}
@@ -68,6 +75,8 @@ public class Content implements IContentBuilder, IContent {
 	public PageList getPagesList() {
 		return this.pages;
 	}
+
+
 
 	@Override
 	public PageList getCommonPagesList() {
@@ -454,6 +463,15 @@ public class Content implements IContentBuilder, IContent {
 		return pages;
 	}
 
+	public IContentNode getTableOfContent() {
+		return pages.get(0);
+	}
+
+	// 이석웅 추가
+	public IContentNode getTableOfContentByHref(String href) {
+		return this.pages.getPageByHref(href);
+	}
+
 	public IChapter getParentChapter(IContentNode node){
 		IChapter parent = pages.getParentChapter(node);
 		if(parent == null){
@@ -495,6 +513,11 @@ public class Content implements IContentBuilder, IContent {
 	public void setPages(PageList pagesList) {
 		this.pages = pagesList;
 	}
+
+	public void addPage(IContentNode page) {
+		this.pages.add(page);
+	}
+	
 
 	@Override
 	public void setAssets(ArrayList<IAsset> assets) {

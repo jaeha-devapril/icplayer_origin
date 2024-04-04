@@ -3,18 +3,25 @@
 	<classpathentry kind="src" output="target/classes" path="src/main/java"/>
 	<classpathentry kind="src" output="target/test-classes" path="src/test/java"/>
 	<classpathentry kind="src" path="src/gwt-test/java"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/icfoundation"/>
 	<classpathentry kind="con" path="com.google.gwt.eclipse.core.GWT_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="libs/mockito-all-1.9.0.jar"/>
-	<classpathentry kind="lib" path="libs/objenesis-1.2.jar"/>
-	<classpathentry kind="lib" path="libs/powermock-mockito-1.4.12-full.jar"/>
-	<classpathentry kind="lib" path="libs/javassist-3.16.1-GA.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/icfoundation"/>
+	<classpathentry kind="lib" path="/Users/leesukwoong/00.Dev/Electron/Learnerstic/new_version/icplayer/libs/mockito-core-1.10.19.jar"/>
+	<classpathentry kind="lib" path="/Users/leesukwoong/00.Dev/Electron/Learnerstic/new_version/icplayer/libs/objenesis-2.4.jar"/>
+	<classpathentry kind="lib" path="/Users/leesukwoong/00.Dev/Electron/Learnerstic/new_version/icplayer/libs/powermock-mockito-1.7.0-full.jar"/>
+	<classpathentry kind="lib" path="/Users/leesukwoong/00.Dev/Electron/Learnerstic/new_version/icplayer/libs/javassist-3.21.0-GA.jar"/>
 	<classpathentry kind="con" path="com.google.appengine.eclipse.core.GAE_CONTAINER/App Engine (1)"/>
 	<classpathentry kind="lib" path="libs/slf4j-api-1.7.25.jar"/>
 	<classpathentry kind="lib" path="libs/slf4j-simple-1.7.25.jar"/>
 	<classpathentry kind="lib" path="libs/gwt-test-utils-0.46.jar"/>
-    <classpathentry kind="lib" path="libs/jackson-core-asl-1.9.1.jar"/>
+	<classpathentry kind="lib" path="libs/jackson-core-asl-1.9.1.jar"/>
+	<classpathentry kind="lib" path="libs/commons-lang3-3.13.0.jar"/>
+	<classpathentry kind="con" path="com.gwtplugins.gwt.eclipse.core.GWT_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/Users/leesukwoong/.p2/pool/plugins/com.gwtplugins.gwt.eclipse.sdkbundle.gwt27_2.7.0.201710131939/gwt-2.7.0/gwt-user.jar"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>

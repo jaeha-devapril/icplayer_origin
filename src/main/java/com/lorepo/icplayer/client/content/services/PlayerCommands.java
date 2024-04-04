@@ -37,6 +37,17 @@ public class PlayerCommands implements IPlayerCommands {
 	public void checkAnswers() {
 		pageController.checkAnswers();
 	}
+
+//	@Override
+//	public void setWorkMode() {
+//		pageController.setWorkMode();
+//	}
+	
+	//이석웅 추가 
+//	@Override
+//	public void setWorkModeWithCSS(boolean isShowCSS) {
+//		pageController.setWorkModeWithCSS(isShowCSS);
+//	}
 	
 	@Override
 	public void incrementCheckCounter() {

@@ -22,7 +22,7 @@ import com.lorepo.icplayer.client.xml.content.parsers.IContentParser;
 
 public class ContentFactory extends XMLVersionAwareFactory {
 	private ArrayList<Integer> pagesSubset;
-	
+
 	protected ContentFactory(ArrayList<Integer> pagesSubset) {
 		this.setPagesSubset(pagesSubset);
 		this.addParser(new ContentParser_v0());
@@ -31,11 +31,11 @@ public class ContentFactory extends XMLVersionAwareFactory {
 		this.addParser(new ContentParser_v3());
 		this.addParser(new ContentParser_v4());
 	}
-	
+
 	public void setPagesSubset(ArrayList<Integer> pagesSubset) {
 		this.pagesSubset = pagesSubset;
 	}
-	
+
 	private void addParser(IContentParser parser) {
 		parser.setPagesSubset(this.pagesSubset);
 		super.addParser(parser);
@@ -44,11 +44,11 @@ public class ContentFactory extends XMLVersionAwareFactory {
 	public static IXMLFactory getInstance(ArrayList<Integer> pagesSubset) {
 		return new ContentFactory(pagesSubset);
 	}
-	
+
 	public static IXMLFactory getInstanceWithAllPages() {
 		return ContentFactory.getInstance(new ArrayList<Integer>());
 	}
-	
+
 	@Override
 	protected RequestFinishedCallback getContentLoadCallback(final IProducingLoadingListener listener) {
 		return new RequestFinishedCallback() {
@@ -62,7 +62,7 @@ public class ContentFactory extends XMLVersionAwareFactory {
 					listener.onError("Wrong status: " + response.getText());
 				}
 			}
-			
+
 			@Override
 			public void onError(Request request, Throwable exception) {
 				listener.onFinishedLoading(null);
@@ -74,10 +74,10 @@ public class ContentFactory extends XMLVersionAwareFactory {
 	public Content produce(String xmlString, String fetchUrl) {
 		Element xml = XMLParser.parse(xmlString).getDocumentElement();
 		String version = XMLUtils.getAttributeAsString(xml, "version", "1");
-		
+
 		Content producedContent = (Content) this.parsersMap.get(version).parse(xml);
 		producedContent.setBaseUrl(fetchUrl);
-		
+
 		return producedContent;
 	}
 }

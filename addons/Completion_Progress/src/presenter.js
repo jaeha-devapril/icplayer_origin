@@ -16,17 +16,20 @@ function AddonCompletion_Progress_create() {
     };
 
     presenter.updateProgress = function () {
+//        console.log("AddonCompletion_Progress_create updateProgress : " + presenter.modules.length);
         if (presenter.modules.length == 0) {
             presenter.currentProgress = 0;
         } else {
             var attemptedCount = 0;
 
             for (var i = 0; i < presenter.modules.length; i++) {
+//                console.log("AddonCompletion_Progress_create", presenter.modules[i], presenter.modules[i].isActivity(), presenter.modules[i].isAttempted());
                 if (presenter.modules[i].isAttempted()) {
                     attemptedCount++;
                 }
             }
 
+//            console.log("AddonCompletion_Progress_create attemptedCount", attemptedCount, presenter.modules.length);
             presenter.currentProgress = Math.floor((attemptedCount / presenter.modules.length) * 100);
         }
 
@@ -106,6 +109,8 @@ function AddonCompletion_Progress_create() {
     presenter.setState = function (state) {
        if (!state) return;
 
+//        console.log("AddonCompletion_Progress_create setState", state);
+
         var parsedState = JSON.parse(state);
 
         presenter.configuration.isVisible = parsedState.isVisible;
@@ -156,6 +161,7 @@ function AddonCompletion_Progress_create() {
     };
 
     presenter.setProgress = function (progress) {
+//        console.log("AddonCompletion_Progress_create setProgress", setProgress);
         var validatedProgress = ModelValidationUtils.validateIntegerInRange(progress, 100);
 
         if (!validatedProgress.isValid) {

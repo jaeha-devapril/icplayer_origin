@@ -7,8 +7,10 @@ import com.google.gwt.xml.client.NodeList;
 import com.lorepo.icf.properties.*;
 import com.lorepo.icf.utils.*;
 import com.lorepo.icf.utils.i18n.DictionaryWrapper;
+import com.lorepo.icplayer.client.utils.Utils;
 import com.lorepo.icplayer.client.module.BasicModuleModel;
 import com.lorepo.icplayer.client.module.IWCAGModuleModel;
+import com.lorepo.icplayer.client.module.api.player.IPlayerServices;
 import com.lorepo.icplayer.client.module.choice.SpeechTextsStaticListItem;
 import com.lorepo.icplayer.client.module.text.TextParser.ParserResult;
 import com.lorepo.icplayer.client.printable.IPrintableModuleModel;
@@ -66,10 +68,22 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 	private boolean blockWrongAnswers = false;
 	private boolean userActionEvents = false;
 	private boolean useEscapeCharacterInGap = false;
+
+	// 이석웅 추가
+	private String gapStyles;
+	private boolean multipleLines = false;
+	private int gapHeight = 0;
+	private String groupID = "";
+	private String isHandwritingInput = "None";
+	private boolean isQuestionNumber = false;
 	private boolean syntaxError = false;
 	private String originalText;
 	private ArrayList<SpeechTextsStaticListItem> speechTextItems = new ArrayList<SpeechTextsStaticListItem>();
 	private String langAttribute = "";
+	private String layoutID = defaultLayoutID;
+	private Element node = null;
+	private String compareText = "text";
+	private IPlayerServices playerService;
 	IListProperty groupGapsListProperty = null;
 	private ArrayList<GroupGapsListItem> groupGaps = new ArrayList<GroupGapsListItem>();
 	private boolean allCharactersGapSizeStyle = true;
@@ -82,6 +96,7 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 	public TextModel() {
 		super("Text", DictionaryWrapper.get("text_module"));
 		gapUniqueId = UUID.uuid(6);
+
 		setText(DictionaryWrapper.get("text_module_default"));
 		addPropertyGapType();
 		addPropertyGapWidth();
@@ -101,6 +116,15 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 		addPropertyUseEscapeCharacterInGap();
 		addPropertySpeechTexts();
 		addPropertyLangAttribute();
+
+		// 이석웅 추가
+		addPropertyGapStyles();
+		addPropertyMultipleLines();
+		addPropertyGapHeight();
+		addPropertyGroupID();
+		addPropertyIsHandwritingInput();
+		addPropertyIsQuestionNumber();
+//		addPropertyIsIgnoreSpace();
 		addPropertyGapSizeCalculationMethod();
 		addPropertyPrintable();
 		addPropertyIsSection();
@@ -108,6 +132,23 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 		addPropertyIgnoreDefaultPlaceholderWhenCheck();
 		addPropertyGroupGaps();
 		addGroupGapsItems(1);
+	}
+
+	// 이석웅 추가
+	public void setPlayerSerivice(IPlayerServices playerService) {
+		this.playerService = playerService;
+	}
+
+	public IPlayerServices getPlayerSerivice() {
+		return this.playerService;
+	}
+
+	public void setLayoutID(String layoutID) {
+		if (this.layoutID == layoutID)
+			return;
+
+		this.layoutID = layoutID;
+		resetText();
 	}
 
 	@Override
@@ -138,8 +179,62 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 		return gapWidth;
 	}
 
+	public int getGapHeight() {
+		return gapHeight;
+	}
+
+	public String getGroupID() {
+		return groupID;
+	}
+
+	public boolean getMultipleLines() {
+		return multipleLines;
+		// return true;
+	}
+
+	public String getIsHandwritingInput() {
+		return isHandwritingInput;
+		// return true;
+	}
+	
+	public boolean getIsQuestionNumber() {
+		return isQuestionNumber;
+		// return true;
+	}
+
+	// 이석웅 추가
+	private void resetText() {
+		if (this.node == null)
+			return;
+
+		if (this.layoutID == defaultLayoutID) {
+			compareText = "text";
+		} else {
+			compareText = "text_" + this.layoutID;
+		}
+		;
+
+		parseModuleNode(this.node);
+	}
+
+	// text일 경우넓이 10 더해줌
+	// 브라우저에 따라 word space 가 달라서...
+	private void resetWidth() {
+		Utils.consoleLog(" this.getId() : " + this.getModuleName());
+		Utils.consoleLog(" this.getId() : " + this.getModuleTypeName());
+		Utils.consoleLog(" this.getWidth() : " + this.getWidth());
+		// if( this.getId().contains("Title") || this.getId().contains("Text") ) {
+		// this.setWidth( this.getWidth() + 10);
+		this.setWidth(this.getWidth());
+		// Utils.consoleLog(" this.getWidth() : " + this.getWidth());
+		// }
+	}
+
 	@Override
 	protected void parseModuleNode(Element node) {
+		this.node = node;
+		// Utils.consoleLog("getMonode.getAttribute node: " + node.getAttribute("id"));
+
 		NodeList nodes = node.getChildNodes();
 		for(int i = 0; i < nodes.getLength(); i++){
 			Node childNode = nodes.item(i);
@@ -149,16 +244,31 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 				useDraggableGaps = XMLUtils.getAttributeAsBoolean(textElement, "draggable");
 				useMathGaps = XMLUtils.getAttributeAsBoolean(textElement, "math");
 				gapWidth = XMLUtils.getAttributeAsInt(textElement, "gapWidth");
+				gapHeight = XMLUtils.getAttributeAsInt(textElement, "gapHeight");
 				gapMaxLength = XMLUtils.getAttributeAsInt(textElement, "gapMaxLength");
 				isActivity = XMLUtils.getAttributeAsBoolean(textElement, "isActivity", true);
 				isDisabled = XMLUtils.getAttributeAsBoolean(textElement, "isDisabled", false);
 				isCaseSensitive = XMLUtils.getAttributeAsBoolean(textElement, "isCaseSensitive", false);
 				useNumericKeyboard = XMLUtils.getAttributeAsBoolean(textElement, "useNumericKeyboard", false);
 				isIgnorePunctuation = XMLUtils.getAttributeAsBoolean(textElement, "isIgnorePunctuation", false);
+//				isIgnoreSpace = XMLUtils.getAttributeAsBoolean(textElement, "isIgnoreSpace", false);
 				isKeepOriginalOrder = XMLUtils.getAttributeAsBoolean(textElement, "isKeepOriginalOrder", false);
 				isClearPlaceholderOnFocus = XMLUtils.getAttributeAsBoolean(textElement, "isClearPlaceholderOnFocus", false);
 				openLinksinNewTab = XMLUtils.getAttributeAsBoolean(textElement, "openLinksinNewTab", true);
 				rawText = XMLUtils.getCharacterDataFromElement(textElement);
+				gapStyles = XMLUtils.getAttributeAsString(textElement, "gapStyles", "");
+				groupID = XMLUtils.getAttributeAsString(textElement, "group", "");
+				multipleLines = XMLUtils.getAttributeAsBoolean(textElement, "multipleLines", false);
+				isHandwritingInput = XMLUtils.getAttributeAsString(textElement, "isHandwritingInput", "");
+				isQuestionNumber = XMLUtils.getAttributeAsBoolean(textElement, "isQuestionNumber", false);
+
+				// 이석웅 추가
+				// 일반 text는 isActivity를 false로 고정한다.
+				isActivity = setIsActivity(node.getAttribute("id"), isActivity);
+				// Utils.consoleLog("multipleLines 1: " +
+				// XMLUtils.getAttributeAsBoolean(textElement, "isDisabled", false));
+				Utils.consoleLog(
+						"multipleLines 2: " + XMLUtils.getAttributeAsBoolean(textElement, "multipleLines", false));
 
 				valueType = XMLUtils.getAttributeAsString(textElement, "valueType");
 				blockWrongAnswers = XMLUtils.getAttributeAsBoolean(textElement, "blockWrongAnswers", false);
@@ -191,6 +301,18 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 		}
 	}
 
+	// 이석웅 추가
+	// 일반 text는 isActivity를 false로 고정한다.
+	private boolean setIsActivity(String moduleId, boolean isActivity) {
+		String newstr = moduleId.replaceAll("[^A-Za-z]+", "");
+		Utils.consoleLog("newstr : " + newstr);
+		// Title, Text
+		if (newstr.equals("Title") || newstr.equals("Text"))
+			return false;
+
+		return isActivity;
+	}
+
 	private void parseModuleGroupsGapsNode(Element node) {
 		NodeList groupsGapsNodes = node.getElementsByTagName("groupsGaps");
 		if (groupsGapsNodes.getLength() == 0) {
@@ -219,9 +341,14 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 		parser.setIgnorePunctuationGaps(isIgnorePunctuation);
 		parser.setKeepOriginalOrder(isKeepOriginalOrder);
 		parser.setGapWidth(gapWidth);
+		parser.setGapHeight(gapHeight);
 		parser.setGapMaxLength(gapMaxLength);
 		parser.setOpenLinksinNewTab(openLinksinNewTab);
 		parser.setUseEscapeCharacterInGap(this.useEscapeCharacterInGap);
+		parser.setGapStyles(gapStyles);
+		parser.seMultipleLines(multipleLines);
+		parser.setIsHandwritingInput(isHandwritingInput);
+		parser.setIsQuestionNumber(isQuestionNumber);
 		parser.setLangTag(this.getLangAttribute());
 		parser.setIsNumericOnly(useNumericKeyboard);
 
@@ -268,8 +395,10 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 		XMLUtils.setBooleanAttribute(text, "math", this.useMathGaps);
 		XMLUtils.setIntegerAttribute(text, "gapMaxLength", this.gapMaxLength);
 		XMLUtils.setIntegerAttribute(text, "gapWidth", this.gapWidth);
+		XMLUtils.setIntegerAttribute(text, "gapHeight", this.gapHeight);
 		XMLUtils.setBooleanAttribute(text, "isActivity", this.isActivity);
 		XMLUtils.setBooleanAttribute(text, "isIgnorePunctuation", this.isIgnorePunctuation);
+//		XMLUtils.setBooleanAttribute(text, "isIgnoreSpace", this.isIgnoreSpace);
 		XMLUtils.setBooleanAttribute(text, "isKeepOriginalOrder", this.isKeepOriginalOrder);
 		XMLUtils.setBooleanAttribute(text, "isClearPlaceholderOnFocus", this.isClearPlaceholderOnFocus);
 		XMLUtils.setBooleanAttribute(text, "isDisabled", this.isDisabled);
@@ -286,6 +415,42 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 		if (this.langAttribute.compareTo("") != 0) {
 			text.setAttribute("langAttribute", this.langAttribute);
 		}
+
+		// 이석웅 추가
+		try {
+			text.setAttribute("gapStyles", this.gapStyles);
+		} catch (Exception e) {
+		}
+		;
+
+		// 이석웅 추가
+		try {
+			XMLUtils.setBooleanAttribute(text, "multipleLines", this.multipleLines);
+		} catch (Exception e) {
+		}
+		;
+
+		// 이석웅 추가
+		try {
+			text.setAttribute("group", this.groupID);
+		} catch (Exception e) {
+		}
+		;
+
+		// 이석웅 추가
+		try {
+			text.setAttribute("isHandwritingInput", this.isHandwritingInput);
+		} catch (Exception e) {
+		}
+		;
+		
+		// 이석웅 추가
+		try {
+			XMLUtils.setBooleanAttribute(text, "isQuestionNumber", this.isQuestionNumber);
+		} catch (Exception e) {
+		}
+		;
+
 		text.setAttribute("valueType", this.valueType);
 		text.setAttribute("printable", printableValue);
 		text.setAttribute("number", this.speechTextItems.get(TextModel.NUMBER_INDEX).getText());
@@ -527,6 +692,74 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 			@Override
 			public String getDisplayName() {
 				return DictionaryWrapper.get("text_module_gap_width");
+			}
+
+			@Override
+			public boolean isDefault() {
+				return false;
+			}
+		};
+
+		addProperty(property);
+	}
+
+	private void addPropertyGapHeight() {
+		IProperty property = new IProperty() {
+
+			@Override
+			public void setValue(String newValue) {
+				gapHeight = Integer.parseInt(newValue);
+				setText(moduleText);
+				sendPropertyChangedEvent(this);
+			}
+
+			@Override
+			public String getValue() {
+				return Integer.toString(gapHeight);
+			}
+
+			@Override
+			public String getName() {
+				return DictionaryWrapper.get("text_module_gap_height");
+			}
+
+			@Override
+			public String getDisplayName() {
+				return DictionaryWrapper.get("text_module_gap_height");
+			}
+
+			@Override
+			public boolean isDefault() {
+				return false;
+			}
+		};
+
+		addProperty(property);
+	}
+
+	private void addPropertyGroupID() {
+		IProperty property = new IProperty() {
+
+			@Override
+			public void setValue(String newValue) {
+				groupID = newValue;
+				setText(moduleText);
+				sendPropertyChangedEvent(this);
+			}
+
+			@Override
+			public String getValue() {
+				return groupID;
+			}
+
+			@Override
+			public String getName() {
+				return DictionaryWrapper.get("text_module_group_id");
+			}
+
+			@Override
+			public String getDisplayName() {
+				return DictionaryWrapper.get("text_module_group_id");
 			}
 
 			@Override
@@ -821,6 +1054,7 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 		addProperty(property);
 	}
 
+
 	private void addPropertyKeepOriginalOrder() {
 		IProperty property = new IBooleanProperty() {
 
@@ -933,6 +1167,168 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 
 		addProperty(property);
 	}
+
+	private void addPropertyGapStyles() {
+		// IProperty property = new IBooleanProperty() {
+		IProperty property = new IStringProperty() {
+
+			@Override
+			public void setValue(String newValue) {
+				// TODO Auto-generated method stub
+				gapStyles = newValue;
+				sendPropertyChangedEvent(this);
+			}
+
+			@Override
+			public boolean isDefault() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			@Override
+			public String getValue() {
+				// TODO Auto-generated method stub
+				return gapStyles;
+			}
+
+			@Override
+			public String getName() {
+				// TODO Auto-generated method stub
+				return DictionaryWrapper.get("gap_styles");
+			}
+
+			@Override
+			public String getDisplayName() {
+				// TODO Auto-generated method stub
+				return DictionaryWrapper.get("gap_styles");
+			}
+		};
+
+		addProperty(property);
+	}
+
+	private void addPropertyMultipleLines() {
+		IProperty property = new IBooleanProperty() {
+			@Override
+			public void setValue(String newValue) {
+				// TODO Auto-generated method stub
+				boolean value = (newValue.compareToIgnoreCase("true") == 0);
+
+				// Utils.consoleLog("addPropertyMultipleLines : " + value + " / " +
+				// multipleLines);
+				if (value != multipleLines) {
+					multipleLines = value;
+					sendPropertyChangedEvent(this);
+				}
+
+			}
+
+			@Override
+			public String getValue() {
+				return multipleLines ? "True" : "False";
+			}
+
+			@Override
+			public String getName() {
+				return DictionaryWrapper.get("multipleLines");
+			}
+
+			@Override
+			public String getDisplayName() {
+				return DictionaryWrapper.get("multipleLines");
+			}
+
+			@Override
+			public boolean isDefault() {
+				return false;
+			}
+		};
+
+		addProperty(property);
+	}
+
+	private void addPropertyIsHandwritingInput() {
+		// IProperty property = new IBooleanProperty() {
+		IProperty property = new IStringProperty() {
+
+			@Override
+			public void setValue(String newValue) {
+				// TODO Auto-generated method stub
+				isHandwritingInput = newValue;
+				sendPropertyChangedEvent(this);
+			}
+
+			@Override
+			public boolean isDefault() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			@Override
+			public String getValue() {
+				// TODO Auto-generated method stub
+				return isHandwritingInput;
+			}
+
+			@Override
+			public String getName() {
+				// TODO Auto-generated method stub
+				return DictionaryWrapper.get("isHandwritingInput");
+			}
+
+			@Override
+			public String getDisplayName() {
+				// TODO Auto-generated method stub
+				return DictionaryWrapper.get("isHandwritingInput");
+			}
+		};
+
+		addProperty(property);
+	}
+	
+	private void addPropertyIsQuestionNumber() {
+		// IProperty property = new IBooleanProperty() {
+		IProperty property = new IBooleanProperty() {
+
+			@Override
+			public void setValue(String newValue) {
+				// TODO Auto-generated method stub
+				boolean value = (newValue.compareToIgnoreCase("true") == 0);
+				isQuestionNumber = value;
+				sendPropertyChangedEvent(this);
+			}
+
+			@Override
+			public boolean isDefault() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			@Override
+			public String getValue() {
+				// TODO Auto-generated method stub
+				return isQuestionNumber ? "True" : "False";
+			}
+
+			@Override
+			public String getName() {
+				// TODO Auto-generated method stub
+				return DictionaryWrapper.get("isQuestionNumber");
+			}
+
+			@Override
+			public String getDisplayName() {
+				// TODO Auto-generated method stub
+				return DictionaryWrapper.get("isQuestionNumber");
+			}
+		};
+
+		addProperty(property);
+	}
+
+	
+	
+	
 
 	private void addPropertyUserActionEvents() {
 		IProperty property = new IBooleanProperty() {
@@ -1197,6 +1593,10 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 		return isIgnorePunctuation;
 	}
 
+//	public boolean isIgnoreSpace() {
+//		return isIgnoreSpace;
+//	}
+
 	public boolean openLinksinNewTab() {
 		return openLinksinNewTab;
 	}
@@ -1221,9 +1621,18 @@ public class TextModel extends BasicModuleModel implements IWCAGModuleModel, IPr
 		return this.useEscapeCharacterInGap;
 	}
 	
+	public String gapStyles() {
+		return this.gapStyles;
+	}
+
+	public Boolean multipleLines() {
+		return this.multipleLines;
+	}
+
 	public boolean isOldGapSizeCalculation() {
 		return this.allCharactersGapSizeStyle;
 	}
+	
 	
 	public String getSpeechTextItem (int index) {
 		if (index < 0 || index >= this.speechTextItems.size()) {

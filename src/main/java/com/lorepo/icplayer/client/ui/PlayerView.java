@@ -10,7 +10,7 @@ import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.HorizontalPanel;
-import com.google.gwt.user.client.ui.PopupPanel;
+import com.google.gwt.user.client.ui.PopupPanel.PositionCallback;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.lorepo.icplayer.client.IPlayerController;
 import com.lorepo.icplayer.client.page.PageView;
@@ -160,14 +160,14 @@ public class PlayerView extends VerticalPanel{
 			}
 			final int panelTop	= panelTop_tmp;
 			
-			prevPageButton.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+			prevPageButton.setPopupPositionAndShow(new PositionCallback() {
 				public void setPosition(int offsetWidth, int offsetHeight) {
 					prevPageButton.setPopupPosition(left, top +(height-offsetHeight)/2);
 					prevPageButton.show();
 				}
 	        });
 			
-			nextPageButton.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+			nextPageButton.setPopupPositionAndShow(new PositionCallback() {
 				public void setPosition(int offsetWidth, int offsetHeight) {
 					nextPageButton.setPopupPosition(right-offsetWidth, top +(height-offsetHeight)/2);
 					nextPageButton.show();
@@ -176,7 +176,7 @@ public class PlayerView extends VerticalPanel{
 			
 			navigationBar.setWidth((getOffsetWidth())+"px");
 			navigationBar.getWidget().setWidth((getOffsetWidth()-41)+"px");
-			navigationBar.setPopupPositionAndShow(new PopupPanel.PositionCallback() {
+			navigationBar.setPopupPositionAndShow(new PositionCallback() {
 				public void setPosition(int offsetWidth, int offsetHeight) {
 					navigationBar.setPopupPosition(left, (panelTop - offsetHeight));
 					navigationBar.setGlassEnabled(false);

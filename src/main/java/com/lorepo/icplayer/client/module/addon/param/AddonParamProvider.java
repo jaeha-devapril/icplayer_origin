@@ -70,7 +70,6 @@ public class AddonParamProvider implements IPropertyProvider{
 				Element element = (Element)optionNodes.item(i);
 				String type = XMLUtils.getAttributeAsString(element, "type");
 				IAddonParam addonParam = paramFactory.createAddonParam(null, type);
-				
 				addonParam.load(element, baseUrl);
 				addonParams.add(addonParam);
 			}

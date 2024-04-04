@@ -1,14 +1,11 @@
 package com.lorepo.icplayer.client;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsArray;
-import com.google.gwt.user.client.Random;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.lorepo.icf.utils.ILoadListener;
 import com.lorepo.icf.utils.JSONUtils;
@@ -26,15 +23,19 @@ import com.lorepo.icplayer.client.module.api.player.IScoreService;
 import com.lorepo.icplayer.client.printable.PrintableContentParser;
 import com.lorepo.icplayer.client.printable.PrintableParams;
 import com.lorepo.icplayer.client.ui.PlayerView;
+import com.lorepo.icplayer.client.utils.Utils;
 import com.lorepo.icplayer.client.xml.IProducingLoadingListener;
 import com.lorepo.icplayer.client.xml.IXMLFactory;
 import com.lorepo.icplayer.client.xml.content.ContentFactory;
+import com.lorepo.icplayer.client.xml.content.ContentFactoryQNote;
+import com.lorepo.icplayer.client.xml.page.PageFactoryQNote;
 import com.lorepo.icplayer.client.xml.page.PageFactory;
 
 public class PlayerApp {
 
 	private String divId;
 	private Content contentModel;
+	private ArrayList<Content> contentModels;
 	private PlayerController playerController;
 	private PlayerConfig playerConfig = new PlayerConfig();
 	/** Score service impl */
@@ -47,13 +48,18 @@ public class PlayerApp {
 	private ArrayList<Integer> pagesSubset = null;
 	private boolean isStaticHeader = false;
 	private static boolean isAnimationRunning = false;
+	private static boolean areStaticScaledElementsFixed = false;
+	private int loadedCnt = 0;
+	private String type = "question";
 	private String lastSentLayoutID = "";
 	private boolean isContentModelLoaded = false;
 	private static JavaScriptObject iframeHandlers = null;
 
-	public PlayerApp(String id, PlayerEntryPoint entryPoint) {
+	
+	public PlayerApp(String id, PlayerEntryPoint entryPoint, String type) {
 		this.divId = id;
 		this.entryPoint = entryPoint;
+		this.type = type;
 	}
 
 	public static native int getIFrameSize(boolean isCommonPage, PlayerApp instance) /*-{
@@ -100,10 +106,19 @@ public class PlayerApp {
 	 * @param pageIndex
 	 * @param isCommonPage
 	 */
-	private void loadPage(String url, int pageIndex, final boolean isCommonPage) {
+	private void loadPage(String url, int pageIndex, final boolean isCommonPage, boolean isQNote) {
 		startPageIndex = pageIndex;
 
-		IXMLFactory contentFactory = ContentFactory.getInstance(this.pagesSubset);
+//		Utils.consoleLog("loadPage url 1 :" + url);
+//		url = url.replace("//PAGES", "/PAGES");
+		Utils.consoleLog("loadPage url 2 :" + url);
+		Utils.consoleLog("isQNote :" + isQNote);
+		Utils.consoleLog("isCommonPage :" + isCommonPage);
+
+		IXMLFactory contentFactory = isQNote ? ContentFactoryQNote.getInstance(this.pagesSubset) : ContentFactory.getInstance(this.pagesSubset);
+		final int toCnt = Utils.getUrlCount(url);
+		// contentModels = new ArrayList<Content>();
+		loadedCnt = 0;
 		isContentModelLoaded = false;
 		contentFactory.load(url, new IProducingLoadingListener() {
 			public void onFinishedLoading(Object content) {
@@ -125,7 +140,28 @@ public class PlayerApp {
 	 * @param pageIndex
 	 */
 	public void load(String url, int pageIndex) {
-		loadPage(url, pageIndex, false);
+		loadPage(url, pageIndex, false, true);
+	}
+
+	//이석웅 추가
+	public void loadLearnetic(String url, int pageIndex) {
+		loadPage(url, pageIndex, false, false);
+	}
+
+	/**
+	 * unLoad content from given URL
+	 * 
+	 * @param url
+	 * @param pageIndex
+	 */
+	public void unload() {
+		removeIframe(this);
+		// contentModel = null;
+		// initPlayer(false);
+		// IXMLFactory contentFactory = ContentFactory.getInstance(this.pagesSubset);
+		//
+		// contentFactory.unload();
+
 	}
 
 	/**
@@ -135,7 +171,7 @@ public class PlayerApp {
 	 * @param pageIndex
 	 */
 	public void loadCommonPage(String url, int pageIndex) {
-		loadPage(url, pageIndex, true);
+		loadPage(url, pageIndex, true, false);
 	}
 
 	public void setPages(String pagesSub) {
@@ -179,6 +215,19 @@ public class PlayerApp {
 			footer[0].style.removeProperty('position');
 			footer[0].style.removeProperty('bottom');
 			footer[0].classList.remove("ic_static_footer");
+		}
+	}-*/;
+
+	public static native void removeIframe(PlayerApp instance) /*-{
+
+		if ($wnd.playerIFrame) {
+			return $wnd.playerIFrame;
+		}
+
+		try {
+			$wnd.removeChild($wnd.playerIFrame);
+		} catch (e) {
+			console.log("removeIframe e : " + e);
 		}
 	}-*/;
 
@@ -238,7 +287,12 @@ public class PlayerApp {
 			if (!@com.lorepo.icplayer.client.PlayerApp::iframeHandlers) @com.lorepo.icplayer.client.PlayerApp::iframeHandlers = [];
 			@com.lorepo.icplayer.client.PlayerApp::iframeHandlers.push(headerScrollHandler);
 		} else {
-			var logoHeight = $wnd.$("#_icplayer").offset().top;
+			// 이석웅 수정
+			// var logoHeight = $wnd.$("#_icplayer").offset().top;
+			var logoHeight = 0;
+			try{
+				var logoHeight = $wnd.$("#_icplayer").offset().top;
+			}catch(e){};
 
 			if (logoHeight > 0) {
 				$wnd.addEventListener('scroll', function() {
@@ -557,7 +611,15 @@ public class PlayerApp {
 
 				setLangAttribute(contentModel.getMetadataValue("lang"));
 
-				entryPoint.onPageLoaded();
+				if( type == "question" ) {
+					entryPoint.onPageLoaded();
+				}else if( type == "jimun" ) {
+					entryPoint.onPageLoadedJimun();
+				}else if( type == "answer" ) {
+					entryPoint.onPageLoadedAnswer();
+				}else if( type == "solve" ) {
+					entryPoint.onPageLoadedSolve();
+				}
 			}
 
 			@Override
@@ -565,6 +627,7 @@ public class PlayerApp {
 				JavaScriptUtils.log("Loading pages error: " + error);
 			}
 		});
+
 		contentModel.setPlayerController(getPlayerServices());
 		RootPanel.get(divId).clear();
 		RootPanel.get(divId).add(playerView);
@@ -607,6 +670,7 @@ public class PlayerApp {
 	private void loadAttachedLibraries() {
 		Map<String, ScriptAsset> attachedLibraries = playerController.getAssetsService().getAttachedLibraries();
 		String baseUrl = contentModel.getBaseUrl();
+
 		for (ScriptAsset libraryAsset : attachedLibraries.values()) {
 			DOMInjector.injectLibrary(
 				URLUtils.resolveURL(baseUrl, libraryAsset.getHref()),
@@ -832,28 +896,53 @@ public class PlayerApp {
 				allPagesLoaded = false;
 				String baseUrl = contentModel.getBaseUrl();
 				String url = URLUtils.resolveURL(baseUrl, page.getHref());
-				PageFactory factory = new PageFactory((Page) page);
-				factory.load(url, new IProducingLoadingListener() {
-					@Override
-					public void onFinishedLoading(Object producedItem) {
-						List<Page> pages = contentModel.getPages().getAllPages();
-						boolean allPagesLoaded = true;
-						for(Page p: pages) {
-							if (!p.isLoaded()) {
-								allPagesLoaded = false;
-								break;
+				if(Utils.isQNote) {
+					PageFactoryQNote factory = new PageFactoryQNote((Page) page);
+					factory.load(url, new IProducingLoadingListener() {
+						@Override
+						public void onFinishedLoading(Object producedItem) {
+							List<Page> pages = contentModel.getPages().getAllPages();
+							boolean allPagesLoaded = true;
+							for (Page p : pages) {
+								if (!p.isLoaded()) {
+									allPagesLoaded = false;
+									break;
+								}
+							}
+							if (allPagesLoaded) {
+								listener.onFinishedLoading("All pages have been loaded!");
 							}
 						}
-						if (allPagesLoaded) {
-							listener.onFinishedLoading("All pages have been loaded!");
-						}
-					}
 
-					@Override
-					public void onError(String error) {
-						listener.onError(error);
-					}
-				});
+						@Override
+						public void onError(String error) {
+							listener.onError(error);
+						}
+					});
+				}else{
+					PageFactory factory = new PageFactory((Page) page);
+					factory.load(url, new IProducingLoadingListener() {
+						@Override
+						public void onFinishedLoading(Object producedItem) {
+							List<Page> pages = contentModel.getPages().getAllPages();
+							boolean allPagesLoaded = true;
+							for (Page p : pages) {
+								if (!p.isLoaded()) {
+									allPagesLoaded = false;
+									break;
+								}
+							}
+							if (allPagesLoaded) {
+								listener.onFinishedLoading("All pages have been loaded!");
+							}
+						}
+
+						@Override
+						public void onError(String error) {
+							listener.onError(error);
+						}
+					});
+				}
 			}
 		}
 		if (allPagesLoaded) {

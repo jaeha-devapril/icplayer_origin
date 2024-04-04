@@ -12,6 +12,7 @@ import com.lorepo.icf.utils.JavaScriptUtils;
 import com.lorepo.icf.utils.StringUtils;
 import com.lorepo.icf.utils.TextToSpeechVoice;
 import com.lorepo.icf.utils.i18n.DictionaryWrapper;
+import com.lorepo.icplayer.client.utils.Utils;
 import com.lorepo.icplayer.client.framework.module.StyleUtils;
 import com.lorepo.icplayer.client.metadata.IMetadata;
 import com.lorepo.icplayer.client.metadata.ScoreWithMetadata;
@@ -36,6 +37,8 @@ public class TextView extends HTML implements IDisplay, IWCAG, MathJaxElement, I
 	private ArrayList<NavigationTextElement> navigationTextElements = new ArrayList<NavigationTextElement>();
 	private final ArrayList<String> mathGapIds = new ArrayList<String>();
 	private boolean moduleHasFocus = false;
+	private int clicks = -1;
+	private TextElementDisplay activeGap = null;
 	private PageController pageController;
 	private ArrayList<InlineChoiceInfo> inlineChoiceInfoArrayList = new ArrayList<InlineChoiceInfo>();
 	private boolean isWCAGon = false;
@@ -49,7 +52,6 @@ public class TextView extends HTML implements IDisplay, IWCAG, MathJaxElement, I
 	// active index of navigation text elements (including links). The order follows the order of navigation elements.
 	private int keyboardNavigationCurrentElementIndex = -1;
 	private NavigationTextElement keyboardNavigationCurrentElement = null;
-	private TextElementDisplay activeGap = null;
 
 	// because of bug (#4498, commit b4c6f7ea1f4a299dc411de1cff408549aa22bf54) FilledGapWidgets aren't added to textElements array as FilledGapWidgets, but as GapWidgets (check connectFilledGaps vs connectGaps)
 	// later this causes issues with inheritance in reconnectHandlers function, so this array contains proper objects (because of poor filledGaps creation, they are added twice - as GapWidgets and FilledGapWidgets)
@@ -59,7 +61,15 @@ public class TextView extends HTML implements IDisplay, IWCAG, MathJaxElement, I
 		this.module = module;
 		this.isPreview = isPreview;
 		createUI(isPreview);
+		changetLayout();
 		mathJaxLoaded();
+	}
+
+	// 이석웅 추가
+	private void changetLayout() {
+		String layoutID = module.getSemiResponsiveID();
+		com.lorepo.icplayer.client.utils.Utils.consoleLog("TextView layoutID : " + layoutID);
+		module.setLayoutID(layoutID);
 	}
 
 	@Override
@@ -81,6 +91,16 @@ public class TextView extends HTML implements IDisplay, IWCAG, MathJaxElement, I
 		}
 
 		getElement().setAttribute("lang", this.module.getLangAttribute());
+
+		//문항번호 속성 추가 
+		try {
+			getElement().setAttribute("isQuestionNumber", this.module.getIsQuestionNumber()+"");
+		} catch (Exception e) {
+		};
+		
+		
+		String layoutID = module.getSemiResponsiveID();
+		Utils.consoleLog("TextView layoutID : " + layoutID );
 	}
 
 	public void mathJaxIsLoadedCallback() {
@@ -161,14 +181,25 @@ public class TextView extends HTML implements IDisplay, IWCAG, MathJaxElement, I
 	@Override
 	public void connectGaps(Iterator<GapInfo> giIterator) {
 		int gapWidth = module.getGapWidth();
+		int gapHeight = module.getGapHeight();
+		
+		boolean isMultipleLines = module.getMultipleLines();
+		
+		Utils.consoleLog("connectGaps isMultipleLines " + isMultipleLines + ". gapWidth :" + gapWidth);
+		
 		while (giIterator.hasNext()) {
 			GapInfo gi = giIterator.next();
 			try {
-				GapWidget gap = new GapWidget(gi, listener);
+				GapWidget gap = new GapWidget(gi, this.module.gapStyles(), listener, module.getId(), module.getPlayerSerivice());
 				gap.setIgnorePlaceholder(module.ignoreDefaultPlaceholderWhenCheck());
+				
 
 				if (gapWidth > 0) {
 					gap.setWidth(gapWidth + "px");
+
+					if( gapHeight > 0 ){
+						gap.setHeight(gapHeight + "px");
+					}
 				} else if (module.getGapType().equals("Editable")) {
 					String longestAnswer = gi.getLongestAnswer();
 					String fontSize = getFontSize(gap.getId());
@@ -196,6 +227,7 @@ public class TextView extends HTML implements IDisplay, IWCAG, MathJaxElement, I
 	@Override
 	public void connectFilledGaps(Iterator<GapInfo> giIterator) {
 		int gapWidth = module.getGapWidth();
+		int gapHeight = module.getGapHeight();
 		while (giIterator.hasNext()) {
 			GapInfo gi = giIterator.next();
 
@@ -203,9 +235,13 @@ public class TextView extends HTML implements IDisplay, IWCAG, MathJaxElement, I
 				continue;
 			}
 			try {
-				FilledGapWidget gap = new FilledGapWidget(gi, listener);
+				FilledGapWidget gap = new FilledGapWidget(gi, this.module.gapStyles(), listener, module.getId(), module.getPlayerSerivice());
 				if (gapWidth > 0) {
 					gap.setWidth(gapWidth + "px");
+
+//					if( gapHeight > 0 ){
+//						gap.setHeight(gapHeight + "px");
+//					}
 				} else {
 					String longestAnswer = gi.getLongestAnswer();
 					String fontSize = getFontSize(gap.getId());
@@ -263,6 +299,7 @@ public class TextView extends HTML implements IDisplay, IWCAG, MathJaxElement, I
 			if (gi.getId().equals(id)) {
 				try {
 					int counter = Integer.parseInt(id.split("-")[1]) - 1;
+					Utils.consoleLog("connectMathGap id : " + id);
 					if (mathGapIds.contains(id)) {
 						if (savedDisabledState.size() > counter) {
 							GapWidget gap = (GapWidget) getChild(counter);
@@ -272,7 +309,7 @@ public class TextView extends HTML implements IDisplay, IWCAG, MathJaxElement, I
 							gapsWidgets.set(counter, gap);
 						}
 					} else {
-						GapWidget gap = new GapWidget(gi, listener);
+						GapWidget gap = new GapWidget(gi, this.module.gapStyles(), listener, module.getId(), module.getPlayerSerivice());
 						gap.setIgnorePlaceholder(module.ignoreDefaultPlaceholderWhenCheck());
 						if (savedDisabledState.size() > 0) {
 							gap.setDisabled(savedDisabledState.get(counter));
@@ -499,6 +536,22 @@ public class TextView extends HTML implements IDisplay, IWCAG, MathJaxElement, I
 		}
 	}
 
+	@Override
+	public void setIndexValue (String id, String index) {
+		Utils.consoleLog("TextView setIndexValue");
+		for (TextElementDisplay gap : textElements) {
+			if (gap.hasId(id)) {
+				Utils.consoleLog("setValue : " + id + ", " + index);
+				try {
+					gap.setIndex(Integer.parseInt(index));
+				}catch(Exception e) {};
+				if (!index.equals("0")) {
+					gap.removeDefaultStyle();
+				}
+				return;
+			}
+		}
+	}
 	@Override
 	public int getChildrenCount() {
 		return textElements.size();

@@ -13,6 +13,7 @@ import com.lorepo.icplayer.client.metadata.IMetadata;
 import com.lorepo.icplayer.client.metadata.Metadata;
 import com.lorepo.icplayer.client.module.api.IModuleModel;
 import com.lorepo.icplayer.client.module.api.INameValidator;
+import com.lorepo.icplayer.client.utils.Utils;
 import com.lorepo.icplayer.client.xml.module.ModuleXMLParsersFactory;
 import com.lorepo.icplayer.client.xml.module.parsers.IModuleModelBuilder;
 
@@ -92,6 +93,7 @@ public abstract class BasicModuleModel extends StyledModule implements IModuleMo
 	@Override
 	public void load(Element element, String baseUrl, String version) {
 		this.baseURL = baseUrl;
+		Utils.baseURL = baseUrl;
 		ModuleXMLParsersFactory factory = new ModuleXMLParsersFactory(this);
 		if (this.contentDefaultLayoutID != null) {
 			factory.setDefaultLayoutID(contentDefaultLayoutID);

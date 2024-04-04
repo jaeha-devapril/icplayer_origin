@@ -6,14 +6,14 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
+import com.lorepo.icplayer.client.xml.page.PageFactoryQNote;
 import org.xml.sax.SAXException;
 
 import com.google.gwt.xml.client.Element;
 import com.lorepo.icf.utils.XMLUtils;
 import com.lorepo.icplayer.client.model.page.Page;
-import com.lorepo.icplayer.client.xml.page.PageFactory;
 
-public class PageFactoryMockup extends PageFactory {
+public class PageFactoryMockup extends PageFactoryQNote {
 
 	public PageFactoryMockup(Page page) {
 		super(page);

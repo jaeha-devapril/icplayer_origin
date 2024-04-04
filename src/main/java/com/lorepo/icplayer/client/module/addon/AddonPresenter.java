@@ -44,6 +44,7 @@ import com.lorepo.icplayer.client.module.api.player.IAddonDescriptor;
 import com.lorepo.icplayer.client.module.api.player.IPlayerServices;
 import com.lorepo.icplayer.client.page.KeyboardNavigationController;
 import com.lorepo.icplayer.client.page.PageController;
+import com.lorepo.icplayer.client.utils.Utils;
 
 
 public class AddonPresenter implements IPresenter, IActivity, IStateful, ICommandReceiver, IWCAGPresenter, IWCAG, IWCAGModuleView, IGradualShowAnswersPresenter, IOpenEndedContentPresenter, IScoreWithMetadataPresenter {
@@ -61,11 +62,15 @@ public class AddonPresenter implements IPresenter, IActivity, IStateful, IComman
 	private static Set<String> buttonAddons = new HashSet<String>(Arrays.asList("single_state_button", "double_state_button", "show_answers", "limited_show_answers", "text_identification", "image_identification", "limited_submit", "external_link_button", "gradual_show_answer"));
 	private InterfaceVersion interfaceVersion = InterfaceVersion.DEFAULT;
 	private ResetVersion resetVersion = ResetVersion.DEFAULT;
+	private String pageURL = "";
 	
-	public AddonPresenter(AddonModel model, IPlayerServices services){
+	public AddonPresenter(AddonModel model, IPlayerServices services, String pageURL){
 		this.model = model;
 		this.services = services;
 		this.addonDescriptor = services.getModel().getAddonDescriptor(model.getAddonId());
+		this.pageURL = pageURL;
+		model.setPageURL(pageURL);
+		Utils.consoleLog("pageURL :" + pageURL);
 		connectHandlers();
 	}
 

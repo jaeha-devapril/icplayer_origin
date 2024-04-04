@@ -15,6 +15,7 @@ import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.ListBox;
 import com.lorepo.icf.utils.StringUtils;
 import com.lorepo.icf.utils.TextToSpeechVoice;
+import com.lorepo.icplayer.client.utils.Utils;
 import com.lorepo.icplayer.client.module.text.TextPresenter.TextElementDisplay;
 import com.lorepo.icplayer.client.module.text.TextPresenter.NavigationTextElement;
 import com.lorepo.icplayer.client.page.PageController;
@@ -32,6 +33,8 @@ public class InlineChoiceWidget extends ListBox implements TextElementDisplay, N
 	private boolean isWorkingMode = true;
 	private int gapState = 0;
 	private TextView view;
+	private ITextViewListener listener;
+	private int preIndex = -1;
 
 	public InlineChoiceWidget (InlineChoiceInfo gi, final ITextViewListener listener, TextView view) {
 
@@ -39,6 +42,7 @@ public class InlineChoiceWidget extends ListBox implements TextElementDisplay, N
 
 		this.view = view;
 		this.choiceInfo = gi;
+		this.listener = listener;
 		setStylePrimaryName("ic_inlineChoice");
 		addStyleName("ic_inlineChoice-default");
 
@@ -97,17 +101,41 @@ public class InlineChoiceWidget extends ListBox implements TextElementDisplay, N
 	}
 
 	private void handleChangingEvent(ITextViewListener listener) {
+		// int index = getSelectedIndex();
+		// if (index > 0) {
+		// 	removeStyleName("ic_inlineChoice-default");
+		// } else {
+		// 	addStyleName("ic_inlineChoice-default");
+		// }
 		int index = getSelectedIndex();
 		if (index > 0) {
+			value = StringUtils.unescapeXML(getValue(index));
 			removeStyleName("ic_inlineChoice-default");
 		} else {
+			value = "---";
 			addStyleName("ic_inlineChoice-default");
 		}
-		listener.onInlineValueChanged(choiceInfo.getId(), value);
+		
+		Utils.consoleLog("InlineChoiceWidget : " + value);
+//					listener.onValueChanged(choiceInfo.getId(), value);
+		// index 추가 전송
+		listener.onInlineValueChanged(choiceInfo.getId(), value + Utils.delemiter + index);
 	}
 
 	public boolean hasId(String id) {
 		return (choiceInfo.getId().compareTo(id) == 0);
+	}
+
+	public static boolean isCorrect(List<String> answers, String enteredValue, boolean isIgnoreCase) {
+		for( String answer : answers ) {
+			if( isIgnoreCase ) {
+				if(answer.compareToIgnoreCase(enteredValue) == 0) return true;
+			}else {
+				if(answer.compareTo(enteredValue) == 0) return true;
+			}
+		}
+		
+		return false;
 	}
 
 	@Override
@@ -168,6 +196,36 @@ public class InlineChoiceWidget extends ListBox implements TextElementDisplay, N
 				break;
 			}
 		}
+	}
+
+	//이석웅 추가 index 로 값 설정
+	public void setIndex(int index) {
+		Utils.consoleLog("setIndex index : " + index);
+		String item = getItemText(index);
+		Utils.consoleLog("setIndex item : " + item);
+//		setSelectedIndex(index);
+		setItemSelected(index, true);
+		
+		if (index > 0) {
+			value = StringUtils.unescapeXML(getValue(index));
+			removeStyleName("ic_inlineChoice-default");
+		} else {
+			value = "---";
+			addStyleName("ic_inlineChoice-default");
+		}
+		
+		// index 추가 전송
+		Utils.consoleLog("preIndex : " + preIndex);
+		Utils.consoleLog("index : " + index);
+		if( preIndex == index ) {
+			return;
+		}
+		
+		preIndex = index;
+//		listener.onValueChanged(choiceInfo.getId(), value + Utils.delemiter + index);
+		// index 추가 전송
+		listener.onInlineValueChanged(choiceInfo.getId(), value + Utils.delemiter + index);
+		Utils.consoleLog("InlineChoiceWidget !! : " + value);
 	}
 
 	@Override

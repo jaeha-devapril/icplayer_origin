@@ -7,17 +7,12 @@ import java.util.Set;
 
 import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.core.client.Scheduler.ScheduledCommand;
-import com.google.gwt.http.client.Request;
-import com.google.gwt.http.client.RequestBuilder;
-import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.RequestException;
-import com.google.gwt.http.client.Response;
-import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.Window;
 import com.lorepo.icf.utils.ILoadListener;
 import com.lorepo.icf.utils.JavaScriptUtils;
 import com.lorepo.icf.utils.URLUtils;
 import com.lorepo.icf.utils.UUID;
+import com.lorepo.icplayer.client.utils.Utils;
 import com.lorepo.icplayer.client.content.services.AdaptiveLearningService;
 import com.lorepo.icplayer.client.content.services.AssetsService;
 import com.lorepo.icplayer.client.content.services.ReportableService;
@@ -45,11 +40,18 @@ import com.lorepo.icplayer.client.page.PageController;
 import com.lorepo.icplayer.client.page.PagePopupPanel;
 import com.lorepo.icplayer.client.ui.PlayerView;
 import com.lorepo.icplayer.client.xml.IProducingLoadingListener;
+import com.lorepo.icplayer.client.xml.page.PageFactoryQNote;
 import com.lorepo.icplayer.client.xml.page.PageFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PlayerController implements IPlayerController {
 
 	private final	Content				contentModel;
+	private boolean isMultiPages = false;
 	private PlayerConfig config = new PlayerConfig();
 	private PageController		pageController1;
 	private PageController		pageController2;
@@ -78,6 +80,11 @@ public class PlayerController implements IPlayerController {
 	private Set<IPage> visitedPages = new HashSet<IPage>();
 
 	private String pageStamp = "0";
+	private int mContentsIndex = -1;
+//	private int mContentsPrevIndex = -1;
+	private boolean mBookMode = false;
+	private PlayerView mView;
+	// private PlayerEntryPoint mEntryPoint;
 
 	private int lastVisitedPageIndex = -1;
 	private int currentMainPageIndex = -1;
@@ -85,6 +92,10 @@ public class PlayerController implements IPlayerController {
 	public PlayerController(Content content, PlayerView view, boolean bookMode, PlayerEntryPoint entryPoint){
 		this.entryPoint = entryPoint;
 		this.contentModel = content;
+		mBookMode = bookMode;
+		mView = view;
+
+		// init();
 		this.playerView = view;
 		this.playerView.setPlayerController(this);
 		this.sessionId = UUID.uuid();
@@ -105,6 +116,19 @@ public class PlayerController implements IPlayerController {
 		this.adaptiveLearningService = new AdaptiveLearningService(this, content.getAdaptiveStructure());
 	}
 
+	// 멀티 문항으로 구성되었는지, 멀티페이지와 다름,
+	private void setMultiPages(ArrayList<Content> contents) {
+		try {
+			if (contents.size() > 1) {
+				isMultiPages = true;
+			} else {
+				isMultiPages = false;
+			}
+		} catch (Exception e) {
+
+		}
+	}
+	private HashMap<Integer, Boolean> mapAddon = new HashMap();
 	private void createPageControllers(boolean bookMode) {
 		this.pageController1 = new PageController(this);
 		this.pageController1.setView(this.playerView.getPageView(0));
@@ -209,7 +233,13 @@ public class PlayerController implements IPlayerController {
 
 	@Override
 	public void switchToPrevPage() {
-		int index = this.currentMainPageIndex-1;
+		// int index = this.currentMainPageIndex-1;
+		int index = 0;
+		if( isMultiPages ) {
+			index = mContentsIndex - 1;
+		}else {
+			index = this.currentMainPageIndex - 1;
+		};
 		if(this.pageController2 != null && index > 0) {
 			index -= 1;
 		}
@@ -233,8 +263,15 @@ public class PlayerController implements IPlayerController {
 
 		PageList pages = this.contentModel.getPages();
 
-		int index = this.currentMainPageIndex + 1;
-		if(this.pageController2 != null && index + 1 < pages.getTotalPageCount()) {
+		//		int index = this.currentMainPageIndex + 1;
+		int index = 0;
+		if( isMultiPages ) {
+			index = mContentsIndex + 1;
+		}else {
+			index = this.currentMainPageIndex + 1;
+		};
+		
+		if (this.pageController2 != null && index + 1 < pages.getTotalPageCount()) {
 			index += 1;
 		}
 		if(index < pages.getTotalPageCount()) {
@@ -337,19 +374,35 @@ public class PlayerController implements IPlayerController {
 		if (previousPage != null && previousPage.getHref() == page.getHref()) {
 			onPageFinishedLoading((Object) previousPage, pageController);
 		} else {
-			PageFactory factory = new PageFactory((Page) page);
-			factory.load(url, new IProducingLoadingListener() {
-				@Override
-				public void onFinishedLoading(Object producedItem) {
-					onPageFinishedLoading(producedItem, pageController);
-				}
-				
-				@Override
-				public void onError(String error) {
-					playerView.hideWaitDialog();
-					JavaScriptUtils.log("Can't load page: " + error);
-				}
-			});
+			if( Utils.isQNote ) {
+				PageFactoryQNote factory = new PageFactoryQNote((Page) page);
+				factory.load(url, new IProducingLoadingListener() {
+					@Override
+					public void onFinishedLoading(Object producedItem) {
+						onPageFinishedLoading(producedItem, pageController);
+					}
+
+					@Override
+					public void onError(String error) {
+						playerView.hideWaitDialog();
+						JavaScriptUtils.log("Can't load page: " + error);
+					}
+				});
+			}else{
+				PageFactory factory = new PageFactory((Page) page);
+				factory.load(url, new IProducingLoadingListener() {
+					@Override
+					public void onFinishedLoading(Object producedItem) {
+						onPageFinishedLoading(producedItem, pageController);
+					}
+
+					@Override
+					public void onError(String error) {
+						playerView.hideWaitDialog();
+						JavaScriptUtils.log("Can't load page: " + error);
+					}
+				});
+			}
 		}
 	}
 	
@@ -380,6 +433,10 @@ public class PlayerController implements IPlayerController {
 	private void pageLoaded(Page page, PageController pageController) {
 		this.keyboardController.save();
 		this.keyboardController.reset();
+		Utils.consoleLog("AAAA pageLoaded : " + (this.headerController != null) + " ," + (pageController != this.pageController2));
+		if(Utils.isQNote ) {
+			pageController.setPageIdx(mContentsIndex);
+		};
 		pageController.setPage(page);
 		if (this.headerController != null && pageController != this.pageController2) {
 		    this.setHeader(page);
@@ -522,6 +579,7 @@ public class PlayerController implements IPlayerController {
 		if (this.isPopupEnabled()) {
 			return;
 		}
+		Utils.consoleLog("pageName " +  pageName);
 		this.setPopupEnabled(true);
 		PopupPage page  = new PopupPage(this.contentModel.findPageByName(pageName));
 		PageController popupPageControler = new PageController(this);
@@ -549,30 +607,33 @@ public class PlayerController implements IPlayerController {
 
 	@Override
 	public void sendAnalytics(String event, HashMap<String, String> params) {
-		if(this.analyticsId == null){
-			return;
-		}
+		// sukwoong
 
-		String url = "http://www.bluenotepad.com/api/log?" +
-				"notepad=" + this.analyticsId + "&session=" + this.sessionId + "&event=" + event;
-		if( params != null){
-			for(String key : params.keySet()){
-				url += "&" + key + "=" + params.get(key).replace("&nbsp;", " ");
-			}
-		}
-		String encodedUrl = URL.encode(url);
-		RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, encodedUrl);
-		try {
-			builder.sendRequest(null, new RequestCallback() {
-				@Override
-				public void onError(Request request, Throwable exception) {
-				}
-				@Override
-				public void onResponseReceived(Request request, Response response){
-				}
-			});
-		} catch (RequestException e) {
-		}
+		// if(this.analyticsId == null){
+			// return;
+		// }
+		//
+		// String url = "http://www.bluenotepad.com/api/log?" +
+				// "notepad=" + this.analyticsId + "&session=" + this.sessionId + "&event=" +
+		// event;
+		// if( params != null){
+			// for(String key : params.keySet()){
+				// url += "&" + key + "=" + params.get(key).replace("&nbsp;", " ");
+			// }
+		// }
+		// String encodedUrl = URL.encode(url);
+		// RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, encodedUrl);
+		// try {
+			// builder.sendRequest(null, new RequestCallback() {
+				// @Override
+				// public void onError(Request request, Throwable exception) {
+				// }
+		// @Override
+				// public void onResponseReceived(Request request, Response response){
+				// }
+		// });
+		// } catch (RequestException e) {
+		// }
 	}
 
 

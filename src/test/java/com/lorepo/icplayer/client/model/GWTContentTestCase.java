@@ -32,7 +32,7 @@ import com.lorepo.icplayer.client.model.asset.ImageAsset;
 import com.lorepo.icplayer.client.model.asset.ScriptAsset;
 import com.lorepo.icplayer.client.model.page.Page;
 import com.lorepo.icplayer.client.model.page.PageList;
-import com.lorepo.icplayer.client.model.utils.ContentFactoryMockup;
+import com.lorepo.icplayer.client.model.utils.ContentFactoryQNoteMockup;
 import com.lorepo.icplayer.client.module.api.player.IChapter;
 import com.lorepo.icplayer.client.module.api.player.IContentNode;
 import com.lorepo.icplayer.client.module.api.player.IPage;
@@ -43,22 +43,22 @@ public class GWTContentTestCase extends GwtTest {
 	private String DEFAULT = "default";
 	
 	private static Content initContentFromString(String xml) throws SAXException, IOException {
-		ContentFactoryMockup contentFactory = (ContentFactoryMockup) ContentFactoryMockup.getInstanceWithAllPages();
+		ContentFactoryQNoteMockup contentFactory = (ContentFactoryQNoteMockup) ContentFactoryQNoteMockup.getInstanceWithAllPages();
 		return contentFactory.loadFromString(xml);
 	}
 	
 	private Content initContentFactoryFromFile(String path, ArrayList<Integer> pageSubset) throws SAXException, IOException {
-		ContentFactoryMockup contentFactory = (ContentFactoryMockup) ContentFactoryMockup.getInstanceWithSubset(pageSubset);
+		ContentFactoryQNoteMockup contentFactory = (ContentFactoryQNoteMockup) ContentFactoryQNoteMockup.getInstanceWithSubset(pageSubset);
 		return contentFactory.loadFromFile(path);
 	}
 	
 	private Content initContentFactoryFromFileWithAllPages(String path) throws SAXException, IOException {
-		ContentFactoryMockup contentFactory = (ContentFactoryMockup) ContentFactoryMockup.getInstanceWithAllPages();
+		ContentFactoryQNoteMockup contentFactory = (ContentFactoryQNoteMockup) ContentFactoryQNoteMockup.getInstanceWithAllPages();
 		return contentFactory.loadFromFile(path);
 	}
 	
 	private String getFromFile(String path) throws IOException {
-		ContentFactoryMockup contentFactory = (ContentFactoryMockup) ContentFactoryMockup.getInstanceWithAllPages();
+		ContentFactoryQNoteMockup contentFactory = (ContentFactoryQNoteMockup) ContentFactoryQNoteMockup.getInstanceWithAllPages();
 		return contentFactory.getFromFile(path);
 	}
 

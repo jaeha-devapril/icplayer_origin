@@ -24,6 +24,11 @@ import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.TextBox;
 import com.lorepo.icplayer.client.module.text.TextPresenter.TextElementDisplay;
 import com.lorepo.icplayer.client.module.text.TextPresenter.NavigationTextElement;
+import com.lorepo.icplayer.client.PlayerEntryPoint;
+import com.lorepo.icplayer.client.framework.module.StyleUtils;
+import com.lorepo.icplayer.client.module.api.player.IPlayerServices;
+import com.lorepo.icplayer.client.utils.Utils;
+import com.lorepo.icf.utils.StringUtils;
 
 
 
@@ -41,11 +46,42 @@ public class GapWidget extends TextBox implements TextElementDisplay, Navigation
 	private final String expNotationPattern = "^[+-]?[,.\\d]*([eE][+-]?[,.\\d]*)?$";
 	
 	protected final GapInfo gapInfo;
+
+	private String moduleID;
+	private IPlayerServices playerService;
 	
-	public GapWidget(GapInfo gi, ITextViewListener listener){
+	public GapWidget(GapInfo gi, String inlineStyles, ITextViewListener listener, String moduleID,
+					 IPlayerServices playerService){
 		super(DOM.getElementById(gi.getId()));
+
+		this.moduleID = moduleID;
+		this.playerService = playerService;
 		gapInfo = gi;
-		
+
+		// 수학 textinput css학년별 변경 처리
+		try {
+			Utils.consoleLog("PlayerEntryPoint.subject : " + PlayerEntryPoint.subject);
+			if( PlayerEntryPoint.subject.equals( "MATH") ) {
+				if( PlayerEntryPoint.grade.equals("1") || PlayerEntryPoint.grade.equals("2") ) {
+					setStylePrimaryName("ic_gap_math_12");
+				}else {
+					setStylePrimaryName("ic_gap_math_3456");
+				}
+			}else {
+				setStylePrimaryName("ic_gap");
+			}
+		}catch(Exception e) {
+			setStylePrimaryName("ic_gap");
+		}
+
+
+//		input의 inlinestyles적용
+		Utils.consoleLog("inlineStyles : " + inlineStyles);
+		if( StringUtils.nullOrTrimmed(inlineStyles).length() > 0 ) {
+			StyleUtils.applyInlineStyle(this, inlineStyles);
+//			StyleUtils.applyInlineStyle(this, "background: transparent;  border-color: blue;");
+		};
+
 		this.initialize(listener);
 	}
 	
@@ -253,7 +289,7 @@ public class GapWidget extends TextBox implements TextElementDisplay, Navigation
 				this.gapState = 3;
 				return;
 			}
-			if (gapInfo.isCorrect(text)) {
+			if (gapInfo.isCorrect(text, null, null)) {
 				addStyleDependentName("correct");
 				this.gapState = 1;
 			} else {
@@ -281,6 +317,11 @@ public class GapWidget extends TextBox implements TextElementDisplay, Navigation
 		this.setWorkMode();
 		this.gapHasBeenAccessed = false;
 		removeStyleDependentName("correct-answer");
+	}
+
+	@Override
+	public void setIndex(int index) {
+
 	}
 
 	@Override
@@ -322,6 +363,7 @@ public class GapWidget extends TextBox implements TextElementDisplay, Navigation
 
 	@Override
 	public boolean isAttempted() {
+//		Utils.consoleLog("isAttempted : " + gapHasBeenAccessed + ", " + getText());
 	    if (this.ignorePlaceholder && this.gapInfo.getPlaceHolder().length() > 0) {
 	        return this.gapHasBeenAccessed;
 	    }
@@ -332,6 +374,10 @@ public class GapWidget extends TextBox implements TextElementDisplay, Navigation
 	public boolean isActivity() {
 		return true;
 	}
+
+//	public boolean isActivityMeta() {
+//		return gapInfo.;
+//	}
 
 	@Override
 	public void setDisabled(boolean disabled) {

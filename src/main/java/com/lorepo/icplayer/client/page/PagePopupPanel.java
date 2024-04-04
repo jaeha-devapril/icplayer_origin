@@ -7,8 +7,6 @@ import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Event.NativePreviewEvent;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.Window.ScrollEvent;
-import com.google.gwt.user.client.Window.ScrollHandler;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.web.bindery.event.shared.HandlerRegistration;
@@ -17,7 +15,9 @@ import com.lorepo.icf.utils.URLUtils;
 import com.lorepo.icplayer.client.content.services.dto.ScaleInformation;
 import com.lorepo.icplayer.client.module.api.event.ValueChangedEvent;
 import com.lorepo.icplayer.client.module.api.player.IPlayerServices;
+import com.lorepo.icplayer.client.utils.Utils;
 import com.lorepo.icplayer.client.xml.IProducingLoadingListener;
+import com.lorepo.icplayer.client.xml.page.PageFactoryQNote;
 import com.lorepo.icplayer.client.xml.page.PageFactory;
 import com.lorepo.icplayer.client.model.page.PopupPage;
 
@@ -75,21 +75,39 @@ public class PagePopupPanel extends DialogBox {
 
 	private void loadPage(PopupPage page, String baseUrl) {
 		String url = URLUtils.resolveURL(baseUrl, page.getHref());
-		PageFactory factory = new PageFactory((PopupPage) page);
-		
-		factory.load(url, new IProducingLoadingListener () {
+		if(Utils.isQNote ) {
+			PageFactoryQNote factory = new PageFactoryQNote((PopupPage) page);
 
-			@Override
-			public void onFinishedLoading(Object producedItem) {
-				PopupPage page = (PopupPage) producedItem;
-				initPanel(page);
-			}
+			factory.load(url, new IProducingLoadingListener() {
 
-			@Override
-			public void onError(String error) {
-				JavaScriptUtils.log("Can't load page: " + error);
-			}
-		});
+				@Override
+				public void onFinishedLoading(Object producedItem) {
+					PopupPage page = (PopupPage) producedItem;
+					initPanel(page);
+				}
+
+				@Override
+				public void onError(String error) {
+					JavaScriptUtils.log("Can't load page: " + error);
+				}
+			});
+		}else{
+			PageFactory factory = new PageFactory((PopupPage) page);
+
+			factory.load(url, new IProducingLoadingListener() {
+
+				@Override
+				public void onFinishedLoading(Object producedItem) {
+					PopupPage page = (PopupPage) producedItem;
+					initPanel(page);
+				}
+
+				@Override
+				public void onError(String error) {
+					JavaScriptUtils.log("Can't load page: " + error);
+				}
+			});
+		}
 	}
 
 	private void initPanel(PopupPage page){

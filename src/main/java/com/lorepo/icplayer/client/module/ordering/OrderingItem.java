@@ -10,6 +10,7 @@ import com.lorepo.icf.properties.IProperty;
 import com.lorepo.icf.utils.StringUtils;
 import com.lorepo.icf.utils.i18n.DictionaryWrapper;
 import com.lorepo.icplayer.client.model.alternativeText.AlternativeTextService;
+import com.lorepo.icplayer.client.utils.Utils;
 
 public class OrderingItem extends BasicPropertyProvider {
 
@@ -26,6 +27,7 @@ public class OrderingItem extends BasicPropertyProvider {
 	public OrderingItem(int index, String safeHtml, String baseURL, Integer startingPosition) {
 
 		super(DictionaryWrapper.get("ordering_item"));
+
 		this.index = index;
 		this.html = safeHtml;
 		this.baseURL = baseURL;
@@ -38,7 +40,27 @@ public class OrderingItem extends BasicPropertyProvider {
 		this.addPropertyStartingPosition();
 	}
 
+	private String getImgURL(String html){
+		//리소스가 상대 경우인경우 도메인 경로 붙여주시
+		try{
+
+			String contentLower = html.toLowerCase();
+			if( contentLower.indexOf("<img") > -1 && contentLower.indexOf("http") < 0){
+				String src = html.substring(html.indexOf("src"), html.length()-1).split("\"")[1];
+//				Utils.consoleLog("getImgURL before : " + src);
+				html = html.replace(src, this.baseURL + src);
+//				Utils.consoleLog("getImgURL aftetr : " + html);
+			}
+
+			return html;
+		}catch(Exception e){
+		}
+		return html;
+	}
+
 	public String getText() {
+		//이석웅 추가
+		html = getImgURL(html);
 		return baseURL == null ? html : StringUtils.updateLinks(html, baseURL);
 	}
 

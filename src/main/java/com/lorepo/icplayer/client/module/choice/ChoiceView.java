@@ -29,6 +29,7 @@ import com.lorepo.icplayer.client.utils.MathJaxElement;
 import com.lorepo.icplayer.client.module.text.AudioInfo;
 import com.lorepo.icplayer.client.module.text.AudioWidget;
 import com.lorepo.icplayer.client.module.text.AudioButtonWidget;
+import com.lorepo.icplayer.client.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,7 @@ public class ChoiceView extends AbsolutePanel implements ChoicePresenter.IDispla
 	private ChoiceModel module;
 	private VerticalPanel optionsPanel;
 	private HorizontalPanel optionsPanelHorizontal;
+	private AbsolutePanel optionsPanelAbsolute;
 	private ArrayList<IOptionDisplay> optionWidgets = new ArrayList<IOptionDisplay>();
 	private ArrayList<IOptionDisplay> orderedWidgets = new ArrayList<IOptionDisplay>();
 	private IOptionListener listener;
@@ -74,46 +76,117 @@ public class ChoiceView extends AbsolutePanel implements ChoicePresenter.IDispla
 
 		optionsPanel = new VerticalPanel();
 		optionsPanelHorizontal = new HorizontalPanel();
+		optionsPanelAbsolute = new AbsolutePanel();
 
-		if(module.isHorizontalLayout()){
-			optionsPanelHorizontal.setStyleName("ic_choice");
+		// if(module.isHorizontalLayout()){
+		// optionsPanelHorizontal.setStyleName("ic_choice");
+		// }else{
+		// optionsPanel.setStyleName("ic_choice");
+		// }
+		//
+		// //todo remove
+		// optionsPanelAbsolute.setStyleName("ic_choice");
+		Utils.consoleLog("module.isHorizontalLayout():  " + module.isHorizontalLayout());
+		if( Utils.isQNote ) {
+			if (module.getLayoutStyle() == "horizontal") {
+				optionsPanelHorizontal.setStyleName("ic_choice");
+			} else if (module.getLayoutStyle() == "vertical") {
+				optionsPanel.setStyleName("ic_choice");
+			} else if (module.getLayoutStyle() == "absolute") {
+				optionsPanelAbsolute.setStyleName("ic_choice");
+			}
 		}else{
-			optionsPanel.setStyleName("ic_choice");
+			if(module.isHorizontalLayout()){
+				optionsPanelHorizontal.setStyleName("ic_choice");
+			}else{
+				optionsPanel.setStyleName("ic_choice");
+			}
 		}
 		
 		makeOrder(isPreview);
 		
-		for(int i = 0; i < order.length; i++) {
+		for (int i = 0; i < order.length; i++) {
+			String layoutID = module.getSemiResponsiveID();
 			ChoiceOption option;
 			option = module.getOption(order[i]);
+			option.setLayoutID(layoutID);
 			OptionView widget;
-			widget = new OptionView(option, module.isMulti());
+			widget = new OptionView(option, module.isMulti(), module.getLayoutStyle(), i, module.getOrderType());
 			
 			if (!this.module.isTabindexEnabled()) {
-				// must be negative other than -1, otherwise GWT resets it to 0 for FocusWidget in onAttach
+				// must be negative other than -1, otherwise GWT resets it to 0 for FocusWidget
+				// in onAttach
 				widget.setTabIndex(-2);
 			}
 			
 			widget.addValueChangeHandler(this);
 			optionWidgets.add(widget);
-			if(module.isHorizontalLayout()){
-				optionsPanelHorizontal.add((Widget)widget);
+
+			if( Utils.isQNote ){
+				if (module.getLayoutStyle() == "horizontal") {
+					optionsPanelHorizontal.add((Widget) widget);
+				} else if (module.getLayoutStyle() == "vertical") {
+					optionsPanel.add((Widget) widget);
+				} else if (module.getLayoutStyle() == "absolute") {
+					// widget.setSize("200px", "60px");
+					com.lorepo.icplayer.client.utils.Utils.consoleLog("getWidth : " + option.getAbsoluteWidth());
+					com.lorepo.icplayer.client.utils.Utils.consoleLog("getHeight : " + option.getAbsoluteHeight());
+
+					// 정해진 사이즈가 설정되어 있다면
+					if (option.getAbsoluteWidth() > 0 && option.getAbsoluteHeight() > 0) {
+						widget.setWidth(option.getAbsoluteWidth() + "px");
+						widget.setHeight(option.getAbsoluteHeight() + "px");
+					}else {
+						widget.setWidth(option.getWidth() + "px");
+						widget.setHeight(option.getHeight() + "px");
+					}
+					;
+					// com.lorepo.icplayer.client.utils.Utils.consoleLog("module.getId() : "+
+					// module.getId());
+					// com.lorepo.icplayer.client.utils.Utils.consoleLog("module.getId() : "+
+					// module.getSemiResponsiveID());
+					optionsPanelAbsolute.add((Widget) widget, option.getX() - module.getLeft(),
+							option.getY() - module.getTop());
+				}
 			}else{
-				optionsPanel.add((Widget)widget);
-			}
+				 if(module.isHorizontalLayout()){
+					 optionsPanelHorizontal.add((Widget)widget);
+				 }else {
+					 optionsPanel.add((Widget) widget);
+				 }
+	 		}
+
+
 		}
 
 		getOrderedOptions();
-		if(module.isHorizontalLayout()){
-			optionsPanelHorizontal.setSize("100%", "100%");
-			add(optionsPanelHorizontal);
-			setWidgetPosition(optionsPanelHorizontal, 0, 0);
+
+		if( Utils.isQNote ){
+			if (module.getLayoutStyle() == "horizontal") {
+				optionsPanelHorizontal.setSize("100%", "100%");
+				add(optionsPanelHorizontal);
+				setWidgetPosition(optionsPanelHorizontal, 0, 0);
+			} else if (module.getLayoutStyle() == "vertical") {
+				optionsPanel.setSize("100%", "100%");
+				add(optionsPanel);
+				setWidgetPosition(optionsPanel, 0, 0);
+			}else if (module.getLayoutStyle() == "absolute") {
+				optionsPanelAbsolute.setSize("100%", "100%");
+				add(optionsPanelAbsolute);
+				setWidgetPosition(optionsPanelAbsolute, 0, 0);
+			}
 		}else{
-			optionsPanel.setSize("100%", "100%");
-			add(optionsPanel);
-			setWidgetPosition(optionsPanel, 0, 0);
+			if(module.isHorizontalLayout()){
+				optionsPanelHorizontal.setSize("100%", "100%");
+				add(optionsPanelHorizontal);
+				setWidgetPosition(optionsPanelHorizontal, 0, 0);
+			}else{
+				optionsPanel.setSize("100%", "100%");
+				add(optionsPanel);
+				setWidgetPosition(optionsPanel, 0, 0);
+			}
 		}
-		
+
 		StyleUtils.applyInlineStyle(this, module);
 		originalDisplay = getElement().getStyle().getDisplay();
 		if(!isPreview){

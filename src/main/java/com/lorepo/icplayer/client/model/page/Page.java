@@ -32,7 +32,9 @@ import com.lorepo.icplayer.client.module.api.player.IPage;
 import com.lorepo.icplayer.client.module.api.player.IPlayerServices;
 import com.lorepo.icplayer.client.semi.responsive.SemiResponsiveStyles;
 import com.lorepo.icplayer.client.ui.Ruler;
+import com.lorepo.icplayer.client.utils.Utils;
 import com.lorepo.icplayer.client.xml.page.IPageBuilder;
+import com.lorepo.icplayer.client.xml.page.PageFactoryQNote;
 import com.lorepo.icplayer.client.xml.page.PageFactory;
 
 public class Page extends BasicPropertyProvider implements IStyledModule, IPage, IPageBuilder {
@@ -352,8 +354,13 @@ public class Page extends BasicPropertyProvider implements IStyledModule, IPage,
 	}
 
 	public void reload(Element rootElement) {
-		PageFactory factory = new PageFactory(this);
-		factory.produce(rootElement.toString(), this.baseURL);
+		if(Utils.isQNote ) {
+			PageFactoryQNote factory = new PageFactoryQNote(this);
+			factory.produce(rootElement.toString(), this.baseURL);
+		}else{
+			PageFactory factory = new PageFactory(this);
+			factory.produce(rootElement.toString(), this.baseURL);
+		}
 	}
 
 	@Override

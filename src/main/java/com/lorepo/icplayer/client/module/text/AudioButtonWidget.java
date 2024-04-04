@@ -191,4 +191,9 @@ public class AudioButtonWidget extends Button implements TextElementDisplay {
     public void showAnswers() {
 
     }
+
+    @Override
+    public void setIndex(int index) {
+
+    }
 }
