@@ -105,7 +105,8 @@ public class TextParser {
 
 		parserResult = new ParserResult();
 		parserResult.originalText = srcText;
-		srcText = srcText.replaceAll("\\s+", " ");
+		if(!multipleLines)
+			srcText = srcText.replaceAll("\\s+", " ");
 		// underline 치환처리
 		if (PlayerEntryPoint.subject.toUpperCase().equals("MATH")) {
 			srcText = srcText.replaceAll("<u>", "<span class=\"underline_math\">");
