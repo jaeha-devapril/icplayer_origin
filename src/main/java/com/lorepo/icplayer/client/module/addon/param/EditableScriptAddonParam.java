@@ -7,6 +7,7 @@ import com.lorepo.icf.properties.IEditableScriptProperty;
 import com.lorepo.icf.utils.StringUtils;
 import com.lorepo.icf.utils.XMLUtils;
 import com.lorepo.icplayer.client.module.addon.AddonModel;
+import com.lorepo.icplayer.client.utils.Utils;
 
 public class EditableScriptAddonParam extends StringAddonParam{
 
@@ -37,8 +38,14 @@ public class EditableScriptAddonParam extends StringAddonParam{
 	public void load(Element element, String baseUrl) {
 		name = XMLUtils.getAttributeAsString(element, "name");
 		displayName = XMLUtils.getAttributeAsString(element, "displayName");
+
 		type = XMLUtils.getAttributeAsString(element, "type");
 		String rawText = XMLUtils.getText(element);
+		if(type == "string") {
+			type = "text";
+			element.setAttribute("type","text");
+			rawText = element.getAttribute("value");
+		}
 		rawText = rawText.replace("\\n", "\n");
 		rawText = rawText.replace("\\:", "\\");
 		value = StringUtils.unescapeXML(rawText);
